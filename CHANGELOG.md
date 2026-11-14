@@ -8,6 +8,9 @@ Multi-Repo Git Graph is a fork of [Speedy Git](https://github.com/onlineeric/spe
 
 ## [0.2.0] - 2026-11-14
 
+### Added
+- **Pull All Repositories** button in the Changed Repos panel's title bar, next to **Fetch All Repositories**. It pulls every repository whose branch has an upstream, four at a time. A repository that fails (for example, local changes that would be overwritten) does not stop the others, and the failures are listed together at the end.
+
 ### Changed
 - **The Changed Repos panel now looks and works like the Source Control view.** Each repository has a header with its branch, the commits to pull (↓) and push (↑), and an **Open Git Graph** button. Under it are a message box (**Ctrl+Enter** commits, and the draft is shared with Source Control), a **Commit** button whose arrow offers **Commit & Push** and **Commit & Sync**, and the **Merge Changes**, **Staged Changes** and **Changes** groups with their file counts. When there is nothing to commit, the button becomes **Sync Changes** or **Publish Branch**.
 - Files show the same status letters and colors as Source Control. Stage, unstage, discard and open buttons appear when you move the pointer over a row. Clicking a file opens the same diff as Source Control.

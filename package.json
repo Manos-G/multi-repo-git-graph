@@ -85,6 +85,12 @@
         "icon": "$(cloud-download)"
       },
       {
+        "command": "multiRepoGraph.changedRepos.pullAll",
+        "title": "Pull All Repositories",
+        "category": "Changed Repos",
+        "icon": "$(repo-pull)"
+      },
+      {
         "command": "multiRepoGraph.changedRepos.showAll",
         "title": "Show All Repositories",
         "category": "Changed Repos",
@@ -319,19 +325,24 @@
           "group": "navigation@1"
         },
         {
-          "command": "multiRepoGraph.changedRepos.refresh",
+          "command": "multiRepoGraph.changedRepos.pullAll",
           "when": "view == multiRepoGraph.changedRepos",
           "group": "navigation@2"
         },
         {
+          "command": "multiRepoGraph.changedRepos.refresh",
+          "when": "view == multiRepoGraph.changedRepos",
+          "group": "navigation@3"
+        },
+        {
           "command": "multiRepoGraph.changedRepos.showAll",
           "when": "view == multiRepoGraph.changedRepos && !multiRepoGraph.changedRepos.showingAll",
-          "group": "navigation@3"
+          "group": "navigation@4"
         },
         {
           "command": "multiRepoGraph.changedRepos.showChangedOnly",
           "when": "view == multiRepoGraph.changedRepos && multiRepoGraph.changedRepos.showingAll",
-          "group": "navigation@3"
+          "group": "navigation@4"
         }
       ],
       "webview/context": [

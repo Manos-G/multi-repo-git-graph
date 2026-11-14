@@ -328,7 +328,7 @@ The fork's main feature: a view in its own Activity Bar container (`multiRepoGra
 | File | Role |
 | --- | --- |
 | `src/changedRepos/ChangedReposView.ts` | `registerChangedReposView()` (called from `src/extension.ts`): gets the `vscode.git` API, registers the `WebviewViewProvider` (`multiRepoGraph.changedRepos`, `retainContextWhenHidden`), the status bar item, all `multiRepoGraph.changedRepos.*` commands, and a 200 ms debounced redraw on every repository's `state.onDidChange`. `ChangedReposPanel` builds the HTML/CSP, turns each repository into a plain `RepoState`, and runs every action (commit, smart commit, stage/unstage/discard, push/publish/sync/pull/fetch, open diff) with a progress bar and Source-Control-style error messages |
-| `src/changedRepos/repoState.ts` | Pure helpers with no `vscode` runtime import (`statusInfo`, `needsAttention`, `fileCount`, `branchLabel`, `repoState`, `groupChanges`), unit-tested in `src/changedRepos/__tests__/` |
+| `src/changedRepos/repoState.ts` | Pure helpers with no `vscode` runtime import (`statusInfo`, `needsAttention`, `fileCount`, `branchLabel`, `repoState`, `groupChanges`, `remoteRepos` — the repositories Fetch All / Pull All work on), unit-tested in `src/changedRepos/__tests__/` |
 | `src/changedRepos/gitApi.ts` | Hand-written types for the part of the `vscode.git` API v1 the panel uses, and `GitStatus` as plain constants (esbuild does not inline `const enum`) |
 | `resources/changed-repos/view.js` | The page: draws the state and sends user actions back. Shipped as is |
 | `resources/changed-repos/view.css` | Source Control look (row heights, hover actions, status letter colors), all through theme tokens |

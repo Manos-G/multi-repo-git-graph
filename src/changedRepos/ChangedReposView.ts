@@ -7,6 +7,7 @@ import {
   branchLabel,
   groupChanges,
   needsAttention,
+  remoteRepos,
   repoName,
   repoState,
   type GroupKind,
@@ -514,14 +515,16 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
   reg('showAll', () => panel.setShowAll(true));
   reg('showChangedOnly', () => panel.setShowAll(false));
   reg('refresh', () => panel.run('Refreshing repositories', () => Promise.all(git.repositories.map((r) => r.status()))));
-  reg('fetchAll', () =>
-    panel.run('Fetching all repositories', async () => {
-      const queue = git.repositories.filter((r) => !!r.state.HEAD?.upstream);
+  // Runs one remote operation on every repository whose branch has an upstream, 4 at a time.
+  // A failure in one repository does not stop the others; all failures are reported together.
+  const runOnAllRemotes = (title: string, verb: string, op: (r: GitRepository) => Promise<void>) =>
+    panel.run(title, async () => {
+      const queue = remoteRepos(git.repositories);
       const failures: string[] = [];
       const worker = async () => {
         for (let r = queue.shift(); r; r = queue.shift()) {
           try {
-            await r.fetch();
+            await op(r);
           } catch (err) {
             failures.push(`${repoName(r)}: ${(err as Error).message ?? err}`);
           }
@@ -529,10 +532,11 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
       };
       await Promise.all([worker(), worker(), worker(), worker()]);
       if (failures.length > 0) {
-        void vscode.window.showWarningMessage(`Fetch failed in ${failures.length} repositories: ${failures.slice(0, 3).join(' | ')}`);
+        void vscode.window.showWarningMessage(`${verb} failed in ${failures.length} repositories: ${failures.slice(0, 3).join(' | ')}`);
       }
-    }),
-  );
+    });
+  reg('fetchAll', () => runOnAllRemotes('Fetching all repositories', 'Fetch', (r) => r.fetch()));
+  reg('pullAll', () => runOnAllRemotes('Pulling all repositories', 'Pull', (r) => r.pull()));
 
   // Right-click menu commands. VS Code passes the row's data-vscode-context object.
   const repoCmd = (id: string, action: string) =>

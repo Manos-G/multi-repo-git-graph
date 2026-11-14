@@ -54,6 +54,14 @@ export function needsAttention(repo: GitRepository, opts: AttentionOptions): boo
   );
 }
 
+/**
+ * The repositories that Fetch All and Pull All work on: those whose current branch has an upstream.
+ * A detached HEAD or an unpublished branch has nothing to fetch or pull from. Returns a new array.
+ */
+export function remoteRepos(repos: readonly GitRepository[]): GitRepository[] {
+  return repos.filter((r) => !!r.state.HEAD?.upstream);
+}
+
 /** Status letter and color class, the same as the Source Control view uses. */
 export function statusInfo(status: number, group: GroupKind): { letter: string; cls: string; deleted: boolean } {
   const S = GitStatus;

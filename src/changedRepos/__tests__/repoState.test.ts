@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { GitStatus, type GitBranch, type GitChange, type GitRepository } from '../gitApi.js';
-import { branchLabel, fileCount, needsAttention, repoState, statusInfo, type AttentionOptions } from '../repoState.js';
+import {
+  branchLabel,
+  fileCount,
+  needsAttention,
+  remoteRepos,
+  repoState,
+  statusInfo,
+  type AttentionOptions,
+} from '../repoState.js';
 
 // Minimal fakes: the helpers only read `fsPath` from a Uri and plain fields from the state.
 const uri = (fsPath: string) => ({ fsPath }) as unknown as GitChange['uri'];
@@ -124,6 +132,24 @@ describe('needsAttention', () => {
 
   it('does not treat a detached HEAD as a branch without upstream', () => {
     expect(needsAttention(fakeRepo({ head: { commit: 'abcdef1234' } }), ALL_ON)).toBe(false);
+  });
+});
+
+describe('remoteRepos (Fetch All / Pull All)', () => {
+  it('keeps only repositories whose branch has an upstream, in order', () => {
+    const a = fakeRepo({ root: '/ws/a', head: tracked() });
+    const unpublished = fakeRepo({ root: '/ws/b', head: { name: 'feature' } });
+    const detached = fakeRepo({ root: '/ws/c', head: { commit: 'abcdef1234' } });
+    const noHead = fakeRepo({ root: '/ws/d' });
+    const e = fakeRepo({ root: '/ws/e', head: tracked(0, 4) });
+    expect(remoteRepos([a, unpublished, detached, noHead, e])).toEqual([a, e]);
+  });
+
+  it('returns a new array, so the caller can use it as a work queue', () => {
+    const repos = [fakeRepo({ head: tracked() })];
+    const queue = remoteRepos(repos);
+    queue.shift();
+    expect(repos).toHaveLength(1);
   });
 });
 
