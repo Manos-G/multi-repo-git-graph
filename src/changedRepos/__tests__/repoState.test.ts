@@ -4,6 +4,7 @@ import {
   branchLabel,
   fileCount,
   needsAttention,
+  pushRepos,
   remoteRepos,
   repoState,
   statusInfo,
@@ -150,6 +151,21 @@ describe('remoteRepos (Fetch All / Pull All)', () => {
     const queue = remoteRepos(repos);
     queue.shift();
     expect(repos).toHaveLength(1);
+  });
+});
+
+describe('pushRepos (Push All)', () => {
+  it('keeps only repositories with an upstream and commits to push', () => {
+    const ahead = fakeRepo({ root: '/ws/a', head: tracked(2, 0) });
+    const diverged = fakeRepo({ root: '/ws/b', head: tracked(1, 3) });
+    const behindOnly = fakeRepo({ root: '/ws/c', head: tracked(0, 3) });
+    const inSync = fakeRepo({ root: '/ws/d', head: tracked() });
+    expect(pushRepos([ahead, diverged, behindOnly, inSync])).toEqual([ahead, diverged]);
+  });
+
+  it('never publishes a branch without an upstream', () => {
+    const unpublished = fakeRepo({ head: { name: 'feature', ahead: 5 } });
+    expect(pushRepos([unpublished])).toEqual([]);
   });
 });
 

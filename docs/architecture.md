@@ -40,7 +40,7 @@ src/
 │   │                             #   opens Source Control's diffs (HEAD↔index '', '~'↔working tree)
 │   ├── repoState.ts              # PURE: GroupKind/GROUP_ORDER/labels, statusInfo (SCM letter + color class),
 │   │                             #   fileCount (distinct paths), needsAttention (include* options), branchLabel,
-│   │                             #   remoteRepos (repos with an upstream: the Fetch All / Pull All queue),
+│   │                             #   remoteRepos (repos with an upstream: Fetch All / Pull All), pushRepos (upstream + ahead: Push All),
 │   │                             #   repoState → the plain RepoState/ViewState sent to the page
 │   ├── gitApi.ts                 # Types for the used part of the vscode.git API v1; GitStatus as plain constants
 │   └── __tests__/repoState.test.ts # The pure helpers above

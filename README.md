@@ -23,7 +23,7 @@ The panel looks and works like the Source Control view. For each repository it s
 - Click a file to see the diff, the same as in Source Control.
 - Right-click a repository, a group or a file for more actions (Pull, Push, Fetch, Open in Terminal and more).
 
-The buttons at the top of the panel fetch all repositories, pull all repositories, refresh the list, and show all repositories. Fetch All and Pull All work on every repository whose branch has an upstream, four at a time, and list the repositories where it failed.
+The buttons at the top of the panel fetch, pull and push all repositories, refresh the list, and show all repositories. Fetch All and Pull All work on every repository whose branch has an upstream. Push All works on every repository with commits to push (↑). It does not publish branches that have no upstream; use **Publish Branch** on that repository. All three run four repositories at a time and list the repositories where they failed.
 
 ### Repositories inside other folders
 

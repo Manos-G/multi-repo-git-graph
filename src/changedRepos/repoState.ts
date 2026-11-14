@@ -62,6 +62,15 @@ export function remoteRepos(repos: readonly GitRepository[]): GitRepository[] {
   return repos.filter((r) => !!r.state.HEAD?.upstream);
 }
 
+/**
+ * The repositories that Push All works on: an upstream and at least one commit to push.
+ * Branches without an upstream are left out on purpose: Push All never publishes (creates
+ * remote branches); that stays a per-repository Publish Branch. Returns a new array.
+ */
+export function pushRepos(repos: readonly GitRepository[]): GitRepository[] {
+  return remoteRepos(repos).filter((r) => (r.state.HEAD?.ahead ?? 0) > 0);
+}
+
 /** Status letter and color class, the same as the Source Control view uses. */
 export function statusInfo(status: number, group: GroupKind): { letter: string; cls: string; deleted: boolean } {
   const S = GitStatus;

@@ -7,6 +7,7 @@ import {
   branchLabel,
   groupChanges,
   needsAttention,
+  pushRepos,
   remoteRepos,
   repoName,
   repoState,
@@ -515,11 +516,20 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
   reg('showAll', () => panel.setShowAll(true));
   reg('showChangedOnly', () => panel.setShowAll(false));
   reg('refresh', () => panel.run('Refreshing repositories', () => Promise.all(git.repositories.map((r) => r.status()))));
-  // Runs one remote operation on every repository whose branch has an upstream, 4 at a time.
+  // Runs one remote operation on the selected repositories, 4 at a time.
   // A failure in one repository does not stop the others; all failures are reported together.
-  const runOnAllRemotes = (title: string, verb: string, op: (r: GitRepository) => Promise<void>) =>
+  const runOnAllRemotes = (
+    title: string,
+    verb: string,
+    select: (repos: readonly GitRepository[]) => GitRepository[],
+    op: (r: GitRepository) => Promise<void>,
+  ) =>
     panel.run(title, async () => {
-      const queue = remoteRepos(git.repositories);
+      const queue = select(git.repositories);
+      if (queue.length === 0) {
+        void vscode.window.showInformationMessage(`${verb} All: no repositories to ${verb.toLowerCase()}.`);
+        return;
+      }
       const failures: string[] = [];
       const worker = async () => {
         for (let r = queue.shift(); r; r = queue.shift()) {
@@ -535,8 +545,9 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
         void vscode.window.showWarningMessage(`${verb} failed in ${failures.length} repositories: ${failures.slice(0, 3).join(' | ')}`);
       }
     });
-  reg('fetchAll', () => runOnAllRemotes('Fetching all repositories', 'Fetch', (r) => r.fetch()));
-  reg('pullAll', () => runOnAllRemotes('Pulling all repositories', 'Pull', (r) => r.pull()));
+  reg('fetchAll', () => runOnAllRemotes('Fetching all repositories', 'Fetch', remoteRepos, (r) => r.fetch()));
+  reg('pullAll', () => runOnAllRemotes('Pulling all repositories', 'Pull', remoteRepos, (r) => r.pull()));
+  reg('pushAll', () => runOnAllRemotes('Pushing all repositories', 'Push', pushRepos, (r) => r.push()));
 
   // Right-click menu commands. VS Code passes the row's data-vscode-context object.
   const repoCmd = (id: string, action: string) =>
