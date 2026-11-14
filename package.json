@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_GITHUB_USER/multi-repo-git-graph"
+    "url": "https://github.com/Manos-G/multi-repo-git-graph"
   },
   "engines": {
     "vscode": "^1.85.0"

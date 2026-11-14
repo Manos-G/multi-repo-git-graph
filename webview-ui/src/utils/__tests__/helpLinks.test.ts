@@ -5,7 +5,7 @@ describe('HELP_LINKS', () => {
   it('leads with the GitHub issues page — the dialog exists to route people there', () => {
     // Pinned to the literal URL: every link derives from one constant, so a typo
     // there would keep the relative assertions green while sending users to a 404.
-    expect(ISSUES_URL).toBe('https://github.com/YOUR_GITHUB_USER/multi-repo-git-graph/issues');
+    expect(ISSUES_URL).toBe('https://github.com/Manos-G/multi-repo-git-graph/issues');
     expect(HELP_LINKS[0].url).toBe(ISSUES_URL);
   });
 

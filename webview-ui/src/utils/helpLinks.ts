@@ -9,7 +9,7 @@ import type { UiAction } from '@shared/telemetry';
  */
 declare const __EXTENSION_VERSION__: string | undefined;
 
-const REPOSITORY_URL = 'https://github.com/YOUR_GITHUB_USER/multi-repo-git-graph';
+const REPOSITORY_URL = 'https://github.com/Manos-G/multi-repo-git-graph';
 
 /** The issues URL, shown verbatim in the dialog so it can be read and copied. */
 export const ISSUES_URL = `${REPOSITORY_URL}/issues`;
