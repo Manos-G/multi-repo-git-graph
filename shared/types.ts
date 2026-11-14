@@ -43,12 +43,12 @@ export interface UserSettings {
   toolbarShowLabels: boolean;
   /** Show the Remote (Manage Remotes) button in the toolbar. */
   toolbarShowRemoteButton: boolean;
-  /** `speedyGit.autolinks.custom`: user-defined `<prefix><number>` links, e.g. Jira keys. */
+  /** `multiRepoGraph.autolinks.custom`: user-defined `<prefix><number>` links, e.g. Jira keys. */
   customAutolinks: CustomAutolink[];
-  /** `speedyGit.autolinks.remoteProvider.enabled`: link `#123` etc. to the GitHub/GitLab remote. */
+  /** `multiRepoGraph.autolinks.remoteProvider.enabled`: link `#123` etc. to the GitHub/GitLab remote. */
   remoteAutolinksEnabled: boolean;
   /**
-   * `speedyGit.git.timeoutSeconds`: how long any git command may run before it
+   * `multiRepoGraph.git.timeoutSeconds`: how long any git command may run before it
    * is stopped, already normalized by {@link normalizeGitTimeoutSeconds}.
    * {@link NO_GIT_TIMEOUT} means never.
    */
@@ -56,7 +56,7 @@ export interface UserSettings {
 }
 
 /**
- * `speedyGit.toolbar.*` boolean settings the webview can persist directly
+ * `multiRepoGraph.toolbar.*` boolean settings the webview can persist directly
  * (via the `setToolbarSetting` RPC, from the toolbar right-click menu).
  */
 export type ToolbarBooleanSetting = 'showLabels' | 'showRemoteButton';
@@ -164,13 +164,13 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
 };
 
 /**
- * Upper bound for `speedyGit.batchCommitSize`, and for the grown batch a
+ * Upper bound for `multiRepoGraph.batchCommitSize`, and for the grown batch a
  * targeted "Go to HEAD" load may request. One response never carries more
  * commits than this, however the setting is configured.
  */
 export const MAX_BATCH_COMMIT_SIZE = 10_000;
 
-/** Coerce a configured `speedyGit.batchCommitSize` into the supported range. */
+/** Coerce a configured `multiRepoGraph.batchCommitSize` into the supported range. */
 export function clampBatchCommitSize(value: number): number {
   if (!Number.isFinite(value) || value < 1) {
     return DEFAULT_USER_SETTINGS.batchCommitSize;
@@ -197,7 +197,7 @@ export function growBatchForTarget(batchSize: number, skip: number, targetIndex?
 }
 
 /**
- * Bounds for `speedyGit.avatars.refreshDays`, mirroring package.json.
+ * Bounds for `multiRepoGraph.avatars.refreshDays`, mirroring package.json.
  *
  * Shared rather than per-side: the settings input clamps what it sends and the
  * backend clamps what it stores, and if those two disagreed the UI would accept
@@ -221,7 +221,7 @@ export function clampAvatarRefreshDays(value: number | string, fallback: number)
 }
 
 /**
- * `speedyGit.git.timeoutSeconds`: one limit for every git command Speedy Git
+ * `multiRepoGraph.git.timeoutSeconds`: one limit for every git command Multi-Repo Git Graph
  * runs — graph loading and push alike — so nobody has to know which commands
  * are "long". The timeout only guards against a hung process; a healthy command
  * never gets near it, so one generous value costs nothing.
@@ -272,7 +272,7 @@ export function worktreeBasePathOf(settings: Pick<UserSettings, 'worktreeBasePat
 }
 
 /**
- * Coerce a configured `speedyGit.worktree.folderNameStyle` into a known style.
+ * Coerce a configured `multiRepoGraph.worktree.folderNameStyle` into a known style.
  *
  * Lives beside the other cross-boundary clamps so the webview and the backend
  * cannot disagree about what an unrecognised configured value means.
@@ -709,7 +709,7 @@ export type AvatarUrlMap = Record<string, string>;
 export interface AvatarAuthState {
   /**
    * True once the user has clicked "Allow avatar lookup" and GitHub granted a
-   * session. Speedy Git never uses a silently-available session without this —
+   * session. Multi-Repo Git Graph never uses a silently-available session without this —
    * the opt-in is what makes "Remove token" meaningful.
    */
   authorized: boolean;

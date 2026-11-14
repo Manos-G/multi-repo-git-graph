@@ -1,7 +1,7 @@
 /**
  * Deliberate hardcoded colors, in the same class as `colorUtils.ts`'s luminance
  * pick: this border has to stay visible against a *user-configured* lane color
- * (`speedyGit.graphColors`), which no theme token knows anything about. Deriving
+ * (`multiRepoGraph.graphColors`), which no theme token knows anything about. Deriving
  * it from one would defeat the contrast choice `isYellowTone` exists to make —
  * the border would sometimes land on top of a lane of the same color.
  *

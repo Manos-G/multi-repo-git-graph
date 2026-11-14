@@ -92,7 +92,7 @@ describe('GitExecutor timeout', () => {
     if (!result.success) {
       expect(result.error.code).toBe('TIMEOUT');
       expect(result.error.message).toContain('after 1 seconds');
-      expect(result.error.message).toContain('speedyGit.git.timeoutSeconds');
+      expect(result.error.message).toContain('multiRepoGraph.git.timeoutSeconds');
     }
   });
 

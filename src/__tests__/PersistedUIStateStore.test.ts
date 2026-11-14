@@ -32,7 +32,7 @@ describe('PersistedUIStateStore', () => {
     const layout = createDefaultCommitTableLayout();
     layout.columns.message.preferredWidth = 600;
     const { store } = createStore({
-      'speedyGit.uiState': {
+      'multiRepoGraph.uiState': {
         ...DEFAULT_PERSISTED_UI_STATE,
         detailsPanelPosition: 'right',
       },
@@ -47,7 +47,7 @@ describe('PersistedUIStateStore', () => {
 
   it('ignores a legacy commitListMode key persisted by versions that had the Classic view', () => {
     const { store, extensionContext } = createStore({
-      'speedyGit.uiState': {
+      'multiRepoGraph.uiState': {
         ...DEFAULT_PERSISTED_UI_STATE,
         commitListMode: 'classic',
       },
@@ -62,7 +62,7 @@ describe('PersistedUIStateStore', () => {
     // The next save rewrites global state without the stale key.
     store.savePersistedUIState({ detailsPanelPosition: 'right' });
     expect(extensionContext.globalState.update).toHaveBeenCalledWith(
-      'speedyGit.uiState',
+      'multiRepoGraph.uiState',
       expect.not.objectContaining({ commitListMode: expect.anything() }),
     );
   });
@@ -86,7 +86,7 @@ describe('PersistedUIStateStore', () => {
       }),
     );
     expect(extensionContext.globalState.update).toHaveBeenCalledWith(
-      'speedyGit.uiState',
+      'multiRepoGraph.uiState',
       expect.not.objectContaining({ commitTableLayout: expect.anything() }),
     );
   });
@@ -142,7 +142,7 @@ describe('PersistedUIStateStore alwaysShowBadgedCommits', () => {
     const { alwaysShowBadgedCommits: _omitted, ...legacy } = DEFAULT_PERSISTED_UI_STATE;
     void _omitted;
     const { store } = createStore({
-      'speedyGit.uiState': { ...legacy, detailsPanelPosition: 'right', bottomPanelHeight: 333 },
+      'multiRepoGraph.uiState': { ...legacy, detailsPanelPosition: 'right', bottomPanelHeight: 333 },
     });
 
     const state = store.loadPersistedUIState();
@@ -154,7 +154,7 @@ describe('PersistedUIStateStore alwaysShowBadgedCommits', () => {
 
   it('falls back to false for a non-boolean value', () => {
     const { store } = createStore({
-      'speedyGit.uiState': { ...DEFAULT_PERSISTED_UI_STATE, alwaysShowBadgedCommits: 'yes' },
+      'multiRepoGraph.uiState': { ...DEFAULT_PERSISTED_UI_STATE, alwaysShowBadgedCommits: 'yes' },
     });
 
     expect(store.loadPersistedUIState().alwaysShowBadgedCommits).toBe(false);
@@ -169,7 +169,7 @@ describe('PersistedUIStateStore alwaysShowBadgedCommits', () => {
 
   it('ignores a non-boolean save and leaves other fields untouched', () => {
     const { store, extensionContext } = createStore({
-      'speedyGit.uiState': { ...DEFAULT_PERSISTED_UI_STATE, detailsPanelPosition: 'right' },
+      'multiRepoGraph.uiState': { ...DEFAULT_PERSISTED_UI_STATE, detailsPanelPosition: 'right' },
     });
 
     store.savePersistedUIState({ alwaysShowBadgedCommits: 'yes' as never });
@@ -186,9 +186,9 @@ describe('PersistedUIStateStore badgedCommitOpacity', () => {
   it('defaults to 40 when missing or not one of the allowed values', () => {
     const { badgedCommitOpacity: _omitted, ...legacy } = DEFAULT_PERSISTED_UI_STATE;
     void _omitted;
-    expect(createStore({ 'speedyGit.uiState': legacy }).store.loadPersistedUIState().badgedCommitOpacity).toBe(40);
+    expect(createStore({ 'multiRepoGraph.uiState': legacy }).store.loadPersistedUIState().badgedCommitOpacity).toBe(40);
     expect(
-      createStore({ 'speedyGit.uiState': { ...DEFAULT_PERSISTED_UI_STATE, badgedCommitOpacity: 50 } })
+      createStore({ 'multiRepoGraph.uiState': { ...DEFAULT_PERSISTED_UI_STATE, badgedCommitOpacity: 50 } })
         .store.loadPersistedUIState().badgedCommitOpacity,
     ).toBe(40);
   });
@@ -242,7 +242,7 @@ describe('PersistedUIStateStore across multiple graph tabs', () => {
     tabA.savePersistedUIState({ detailsPanelPosition: 'right' });
     tabB.savePersistedUIState({ detailsPanelPosition: 'bottom' });
 
-    expect((memento['speedyGit.uiState'] as { detailsPanelPosition: string }).detailsPanelPosition)
+    expect((memento['multiRepoGraph.uiState'] as { detailsPanelPosition: string }).detailsPanelPosition)
       .toBe('bottom');
   });
 
@@ -276,8 +276,8 @@ describe('PersistedUIStateStore across multiple graph tabs', () => {
     tab.savePersistedUIState({ detailsPanelPosition: 'right' });
 
     // A peer writes a different panel position while this tab sits on repo-a.
-    memento['speedyGit.uiState'] = {
-      ...(memento['speedyGit.uiState'] as object),
+    memento['multiRepoGraph.uiState'] = {
+      ...(memento['multiRepoGraph.uiState'] as object),
       detailsPanelPosition: 'bottom',
     };
 

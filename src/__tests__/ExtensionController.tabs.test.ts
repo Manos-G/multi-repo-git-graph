@@ -448,7 +448,7 @@ describe('a repository leaving the workspace', () => {
 });
 
 describe('splitting a graph editor', () => {
-  const graphTab = () => ({ input: new vscodeStub.TabInputWebview('mainThreadWebview-speedyGit') });
+  const graphTab = () => ({ input: new vscodeStub.TabInputWebview('mainThreadWebview-multiRepoGraph') });
 
   /** Open a graph and leave its group focused, as the user would before splitting. */
   async function graphFocusedInGroupOne(controller: InstanceType<typeof ExtensionController>) {

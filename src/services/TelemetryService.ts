@@ -60,8 +60,8 @@ export interface TelemetryService extends vscode.Disposable {
   dispose(): void;
 }
 
-const OUTPUT_CHANNEL_NAME = 'Speedy Git Telemetry';
-const EXTENSION_SETTING_SECTION = 'speedyGit.telemetry.enabled';
+const OUTPUT_CHANNEL_NAME = 'Multi-Repo Git Graph Telemetry';
+const EXTENSION_SETTING_SECTION = 'multiRepoGraph.telemetry.enabled';
 
 type TelemetryProperties = Record<string, string>;
 type TelemetryMeasurements = Record<string, number>;
@@ -247,7 +247,7 @@ class ReporterTelemetryService implements TelemetryService {
 
 function readExtensionSetting(): boolean {
   try {
-    return vscode.workspace.getConfiguration('speedyGit').get<boolean>('telemetry.enabled', true);
+    return vscode.workspace.getConfiguration('multiRepoGraph').get<boolean>('telemetry.enabled', true);
   } catch {
     return true;
   }

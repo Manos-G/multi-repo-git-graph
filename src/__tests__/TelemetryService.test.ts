@@ -208,9 +208,9 @@ describe('real implementation', () => {
   });
 });
 
-describe('extension setting gate (speedyGit.telemetry.enabled)', () => {
+describe('extension setting gate (multiRepoGraph.telemetry.enabled)', () => {
   const settingChangeEvent = {
-    affectsConfiguration: (section: string) => section === 'speedyGit.telemetry.enabled',
+    affectsConfiguration: (section: string) => section === 'multiRepoGraph.telemetry.enabled',
   };
 
   it('suppresses sends while the setting is false and logs the status change', () => {

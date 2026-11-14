@@ -1,7 +1,7 @@
 import { normalizeGitTimeoutSeconds } from '../../../shared/types.js';
 import type { RequestHandlerMap } from '../WebviewMessageRouter.js';
 import { writeSettingWithReply } from './settingWriteReplies.js';
-import { updateSpeedyGitSettingInDefinedScope } from './updateSpeedyGitSetting.js';
+import { updateMultiRepoGraphSettingInDefinedScope } from './updateMultiRepoGraphSetting.js';
 
 /**
  * The Settings dialog's Git tab. The new value reaches the webview as the
@@ -18,7 +18,7 @@ export const gitSettingsHandlers = {
     const { seconds, requestId } = message.payload;
     const value = seconds === null ? undefined : normalizeGitTimeoutSeconds(seconds);
     await writeSettingWithReply(context, requestId, 'the git command timeout', () =>
-      updateSpeedyGitSettingInDefinedScope('git.timeoutSeconds', value),
+      updateMultiRepoGraphSettingInDefinedScope('git.timeoutSeconds', value),
     );
   },
 } satisfies Pick<RequestHandlerMap, 'setGitTimeoutSeconds'>;

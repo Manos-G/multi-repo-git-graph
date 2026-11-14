@@ -16,7 +16,7 @@ import { resolveRemoteAutolinkTarget, type RemoteAutolinkTarget } from './remote
  * panel, tooltip) renders from that list, so a reference links the same way —
  * or not at all — wherever the message appears:
  *
- * - **custom** rules come from `speedyGit.autolinks.custom` (Jira keys and the like);
+ * - **custom** rules come from `multiRepoGraph.autolinks.custom` (Jira keys and the like);
  * - **github** / **gitlab** rules come from the repository's remote, and only
  *   when {@link resolveRemoteAutolinkTarget} is confident which repository a bare
  *   `#12` means. They link exactly the references the provider's own web page

@@ -16,6 +16,6 @@ describe('peerActivityNotice', () => {
   });
 
   it('names no repository, branch or path', () => {
-    expect(PEER_ACTIVITY_NOTICE).toBe('Another Speedy Git view is running a Git operation.');
+    expect(PEER_ACTIVITY_NOTICE).toBe('Another Multi-Repo Git Graph view is running a Git operation.');
   });
 });

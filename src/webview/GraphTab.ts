@@ -43,6 +43,8 @@ export interface GraphTabOptions {
  * must exist once per window lives in {@link ExtensionServices} instead, and
  * this object reaches it through `shared`.
  */
+const FORK_DISABLE_WHATS_NEW_POPUP = true;
+
 export class GraphTab {
   private readonly runtime: WebviewRuntime;
   private readonly services: GitServiceRegistry;
@@ -290,6 +292,9 @@ export class GraphTab {
    * one's dialog is still open.
    */
   private sendWhatsNew(): void {
+    // Fork: the "What's new" entries describe upstream Speedy Git releases, so do not open them automatically.
+    // They stay available from the News button.
+    if (FORK_DISABLE_WHATS_NEW_POPUP) return;
     if (this.shared.whatsNewOfferedThisSession) return;
     this.shared.whatsNewOfferedThisSession = true;
 
@@ -351,7 +356,7 @@ export class GraphTab {
     // fallback is raw, so clamp here too.
     return this.options.getSettings().batchCommitSize
       ?? clampBatchCommitSize(
-        vscode.workspace.getConfiguration('speedyGit').get<number>('batchCommitSize', DEFAULT_USER_SETTINGS.batchCommitSize),
+        vscode.workspace.getConfiguration('multiRepoGraph').get<number>('batchCommitSize', DEFAULT_USER_SETTINGS.batchCommitSize),
       );
   }
 }

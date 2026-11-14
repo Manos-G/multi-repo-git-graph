@@ -15,11 +15,11 @@ vi.mock('vscode', () => ({
   commands: { executeCommand: mocks.executeCommand },
 }));
 
-import { updateSpeedyGitSetting, updateSpeedyGitSettingInDefinedScope } from '../webview/handlers/updateSpeedyGitSetting.js';
+import { updateMultiRepoGraphSetting, updateMultiRepoGraphSettingInDefinedScope } from '../webview/handlers/updateMultiRepoGraphSetting.js';
 import { isUnregisteredSettingError, UNREGISTERED_SETTING_MESSAGE } from '../utils/settingsWriteErrors.js';
 
 const UNREGISTERED = new Error(
-  'Unable to write to User Settings because speedyGit.autolinks.custom is not a registered configuration.',
+  'Unable to write to User Settings because multiRepoGraph.autolinks.custom is not a registered configuration.',
 );
 
 /**
@@ -27,7 +27,7 @@ const UNREGISTERED = new Error(
  * any setting the new version added. Only a reload fixes it, so the write turns
  * that into an actionable message and offers the reload.
  */
-describe('updateSpeedyGitSetting with a setting VS Code has not registered yet', () => {
+describe('updateMultiRepoGraphSetting with a setting VS Code has not registered yet', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.showWarningMessage.mockResolvedValue(undefined);
@@ -40,8 +40,8 @@ describe('updateSpeedyGitSetting with a setting VS Code has not registered yet',
   });
 
   it.each([
-    ['Global', () => updateSpeedyGitSetting('autolinks.custom', [])],
-    ['defined-scope', () => updateSpeedyGitSettingInDefinedScope('autolinks.custom', [])],
+    ['Global', () => updateMultiRepoGraphSetting('autolinks.custom', [])],
+    ['defined-scope', () => updateMultiRepoGraphSettingInDefinedScope('autolinks.custom', [])],
   ])('%s write rethrows an actionable message and offers a reload', async (_name, write) => {
     mocks.update.mockRejectedValue(UNREGISTERED);
 
@@ -53,7 +53,7 @@ describe('updateSpeedyGitSetting with a setting VS Code has not registered yet',
     mocks.update.mockRejectedValue(UNREGISTERED);
     mocks.showWarningMessage.mockResolvedValue('Reload Window');
 
-    await expect(updateSpeedyGitSetting('autolinks.custom', [])).rejects.toThrow();
+    await expect(updateMultiRepoGraphSetting('autolinks.custom', [])).rejects.toThrow();
     await vi.waitFor(() => expect(mocks.executeCommand).toHaveBeenCalledWith('workbench.action.reloadWindow'));
   });
 
@@ -61,7 +61,7 @@ describe('updateSpeedyGitSetting with a setting VS Code has not registered yet',
     const other = new Error('settings file is read-only');
     mocks.update.mockRejectedValue(other);
 
-    await expect(updateSpeedyGitSetting('toolbar.fetch', true)).rejects.toBe(other);
+    await expect(updateMultiRepoGraphSetting('toolbar.fetch', true)).rejects.toBe(other);
     expect(mocks.showWarningMessage).not.toHaveBeenCalled();
   });
 });

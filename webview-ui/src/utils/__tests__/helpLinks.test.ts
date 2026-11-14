@@ -5,7 +5,7 @@ describe('HELP_LINKS', () => {
   it('leads with the GitHub issues page — the dialog exists to route people there', () => {
     // Pinned to the literal URL: every link derives from one constant, so a typo
     // there would keep the relative assertions green while sending users to a 404.
-    expect(ISSUES_URL).toBe('https://github.com/onlineeric/speedy-git-ext/issues');
+    expect(ISSUES_URL).toBe('https://github.com/YOUR_GITHUB_USER/multi-repo-git-graph/issues');
     expect(HELP_LINKS[0].url).toBe(ISSUES_URL);
   });
 
@@ -22,6 +22,6 @@ describe('HELP_LINKS', () => {
 
 describe('VERSION_LABEL', () => {
   it('renders the version injected at build time', () => {
-    expect(VERSION_LABEL).toBe('Speedy Git v0.0.0-test');
+    expect(VERSION_LABEL).toBe('Multi-Repo Git Graph v0.0.0-test');
   });
 });

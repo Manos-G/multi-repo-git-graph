@@ -7,7 +7,7 @@ import { buildWhatsNewPayload, isExactVersion, shouldRecordWhatsNew, type WhatsN
  * `globalState` rather than workspace state: the dialog is about the extension,
  * not about a repository, so opening a second folder must not show it again.
  */
-const LAST_SHOWN_KEY = 'speedyGit.whatsNewVersion';
+const LAST_SHOWN_KEY = 'multiRepoGraph.whatsNewVersion';
 
 /**
  * Owns the one fact the webview cannot work out for itself: which entry the

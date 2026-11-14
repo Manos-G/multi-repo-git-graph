@@ -9,7 +9,7 @@ import type { UiAction } from '@shared/telemetry';
  */
 declare const __EXTENSION_VERSION__: string | undefined;
 
-const REPOSITORY_URL = 'https://github.com/onlineeric/speedy-git-ext';
+const REPOSITORY_URL = 'https://github.com/YOUR_GITHUB_USER/multi-repo-git-graph';
 
 /** The issues URL, shown verbatim in the dialog so it can be read and copied. */
 export const ISSUES_URL = `${REPOSITORY_URL}/issues`;
@@ -58,14 +58,14 @@ export const HELP_LINKS: readonly HelpLink[] = [
     telemetryAction: 'helpOpenChangelog',
   },
   {
-    label: 'Rate & review on the Marketplace',
-    description: 'Ratings help other developers find Speedy Git.',
-    url: 'https://marketplace.visualstudio.com/items?itemName=onlineeric.speedy-git-ext',
+    label: 'Original project: Speedy Git',
+    description: 'Multi-Repo Git Graph is a fork of Speedy Git by Eric Cheng (MIT).',
+    url: 'https://github.com/onlineeric/speedy-git-ext',
     telemetryAction: 'helpOpenMarketplace',
   },
 ];
 
 /** Version line for the dialog footer. Fixed at build time, so it is a constant. */
-export const VERSION_LABEL = `Speedy Git v${
+export const VERSION_LABEL = `Multi-Repo Git Graph v${
   typeof __EXTENSION_VERSION__ === 'string' ? __EXTENSION_VERSION__ : 'unknown'
 }`;

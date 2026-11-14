@@ -1,5 +1,5 @@
 /**
- * Custom autolinks — the `speedyGit.autolinks.custom` setting.
+ * Custom autolinks — the `multiRepoGraph.autolinks.custom` setting.
  *
  * Each entry turns `<prefix><number>` in a commit message into a link, the way
  * GitLens's `gitlens.autolinks` does. The entry shape is deliberately GitLens's

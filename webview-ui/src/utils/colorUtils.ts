@@ -2,7 +2,7 @@
  * Default graph color palette when user has no custom colors configured.
  *
  * theme-color-exception: this is the default *value* of the user-configurable
- * `speedyGit.graphColors` setting, not a color the UI picks — lane colors are the
+ * `multiRepoGraph.graphColors` setting, not a color the UI picks — lane colors are the
  * user's to choose and no theme token corresponds to them.
  */
 export const DEFAULT_GRAPH_PALETTE = ['#4ec9b0'];

@@ -32,7 +32,7 @@ export function pickReturnTarget(tabs: TabSnapshot[]): TabSnapshot | null {
 }
 
 /**
- * SCM "Open in Speedy Git": the most recently active tab whose TOP-LEVEL repo
+ * SCM "Open in Multi-Repo Git Graph": the most recently active tab whose TOP-LEVEL repo
  * is this one.
  *
  * Matches on `topLevelRepoPath`, not on what is displayed: a tab currently
@@ -107,6 +107,6 @@ export function tabsOrphanedByRepoRemoval(tabs: TabSnapshot[], knownRepoPaths: s
  * directory.
  */
 export function panelTitleFor(displayedRepoPath: string): string {
-  if (!displayedRepoPath) return 'Speedy Git';
-  return path.basename(displayedRepoPath.replace(/[\\/]+$/, '')) || 'Speedy Git';
+  if (!displayedRepoPath) return 'Multi-Repo Git Graph';
+  return path.basename(displayedRepoPath.replace(/[\\/]+$/, '')) || 'Multi-Repo Git Graph';
 }

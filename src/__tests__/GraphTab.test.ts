@@ -404,13 +404,13 @@ describe('GraphTab per-repo column layout', () => {
     uiStateStore.savePersistedUIState({ detailsPanelPosition: 'right' });
 
     expect(extensionContext.globalState.update).toHaveBeenCalledWith(
-      'speedyGit.uiState',
+      'multiRepoGraph.uiState',
       expect.objectContaining({ detailsPanelPosition: 'right' }),
     );
 
     // Global state should NOT contain commitTableLayout
     const globalCall = (extensionContext.globalState.update as ReturnType<typeof vi.fn>).mock.calls.find(
-      (call: unknown[]) => call[0] === 'speedyGit.uiState'
+      (call: unknown[]) => call[0] === 'multiRepoGraph.uiState'
     );
     expect(globalCall).toBeDefined();
     expect(globalCall![1]).not.toHaveProperty('commitTableLayout');

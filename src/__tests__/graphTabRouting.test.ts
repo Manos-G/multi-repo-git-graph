@@ -198,6 +198,6 @@ describe('panelTitleFor', () => {
   });
 
   it('falls back for an empty path', () => {
-    expect(panelTitleFor('')).toBe('Speedy Git');
+    expect(panelTitleFor('')).toBe('Multi-Repo Git Graph');
   });
 });

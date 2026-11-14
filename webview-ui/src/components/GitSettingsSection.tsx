@@ -12,8 +12,8 @@ import {
 import { dialogHintClassName, dialogSectionLabelClassName, settingNumberInputClassName } from './dialogStyles';
 
 /**
- * The Git tab of the Settings dialog: how Speedy Git runs git itself.
- * Edits `speedyGit.*` settings, so VS Code's Settings page shows the same values.
+ * The Git tab of the Settings dialog: how Multi-Repo Git Graph runs git itself.
+ * Edits `multiRepoGraph.*` settings, so VS Code's Settings page shows the same values.
  */
 export function GitSettingsSection() {
   return (
@@ -26,7 +26,7 @@ export function GitSettingsSection() {
   );
 }
 
-/** `speedyGit.git.timeoutSeconds` — a text-edited setting, so it holds a draft until Save. */
+/** `multiRepoGraph.git.timeoutSeconds` — a text-edited setting, so it holds a draft until Save. */
 function GitTimeoutField() {
   const saved = useGraphStore((state) => state.userSettings.gitTimeoutSeconds);
   const { draft, setDraft, isDirty, discard } = useSettingDraft(saved, toGitTimeoutDraft, isGitTimeoutDraftChanged);
@@ -59,7 +59,7 @@ function GitTimeoutField() {
         </span>
       </label>
       <p id="git-timeout-hint" className={`${dialogHintClassName} mt-1`}>
-        How long any git command may run before Speedy Git stops it — loading the graph, push, pull, fetch, commit
+        How long any git command may run before Multi-Repo Git Graph stops it — loading the graph, push, pull, fetch, commit
         hooks and everything else. Default {DEFAULT_USER_SETTINGS.gitTimeoutSeconds}, minimum{' '}
         {MIN_GIT_TIMEOUT_SECONDS}. Enter <strong>0 for no timeout</strong>: a command that stalls then keeps running
         until you reload the window.

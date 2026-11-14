@@ -26,7 +26,7 @@ function makeContext(gitRebaseService: Record<string, unknown>, operationInProgr
 }
 
 /**
- * These cases exist to keep one rule in place: Speedy Git must not invent preconditions
+ * These cases exist to keep one rule in place: Multi-Repo Git Graph must not invent preconditions
  * that git itself does not impose. `git rebase` refuses on tracked changes and tolerates
  * untracked files; deciding that here once blocked rebases over nothing but untracked
  * directories. The operations must reach git, and git's refusal must reach the user.

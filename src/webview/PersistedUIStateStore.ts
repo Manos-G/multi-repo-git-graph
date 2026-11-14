@@ -13,7 +13,7 @@ import {
   isBadgedCommitOpacity,
 } from '../../shared/types.js';
 
-const UI_STATE_KEY = 'speedyGit.uiState';
+const UI_STATE_KEY = 'multiRepoGraph.uiState';
 const MIN_PANEL_SIZE = 120;
 export const HEALING_ASSUMED_CONTAINER_WIDTH = 4000;
 
@@ -39,7 +39,7 @@ export function healPersistedColumnWidth(
 
 export function repoLayoutKey(repoPath: string): string {
   const hash = crypto.createHash('sha256').update(repoPath).digest('hex').slice(0, 16);
-  return `speedyGit.repoTableLayout.${hash}`;
+  return `multiRepoGraph.repoTableLayout.${hash}`;
 }
 
 export function clonePersistedUIStateDefaults(): PersistedUIState {

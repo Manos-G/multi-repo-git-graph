@@ -1,23 +1,29 @@
 {
-  "name": "speedy-git-ext",
-  "displayName": "Speedy Git",
-  "description": "A performance-first, lightweight Git graph visualization extension for VS Code",
-  "version": "5.24.2",
-  "publisher": "onlineeric",
+  "name": "multi-repo-git-graph",
+  "displayName": "Multi-Repo Git Graph",
+  "description": "Git graph for workspaces with many repositories: a Source Control style panel that shows only changed repositories, with a separate graph for each. Fork of Speedy Git.",
+  "version": "0.1.0",
+  "publisher": "local",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/onlineeric/speedy-git-ext"
+    "url": "https://github.com/YOUR_GITHUB_USER/multi-repo-git-graph"
   },
   "engines": {
     "vscode": "^1.85.0"
   },
-  "icon": "resources/speedy-git-ext-icon-128.png",
+  "icon": "resources/multi-repo-git-graph-icon-128.png",
   "categories": [
     "SCM Providers",
     "Visualization"
   ],
   "keywords": [
+    "multi-repo",
+    "multi repo",
+    "ros",
+    "ros2",
+    "vcstool",
+    "changed repositories",
     "git",
     "git graph",
     "git history",
@@ -41,13 +47,7 @@
     "branch compare",
     "compare branches",
     "large repo",
-    "rebase",
-    "interactive rebase",
-    "cherry pick",
-    "stash",
-    "submodule",
-    "signed commits",
-    "cursor"
+    "rebase"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -56,26 +56,26 @@
   "contributes": {
     "commands": [
       {
-        "command": "speedyGit.showGraph",
-        "title": "Show Speedy Git",
-        "category": "Speedy Git"
+        "command": "multiRepoGraph.showGraph",
+        "title": "Show Multi-Repo Git Graph",
+        "category": "Multi-Repo Git Graph"
       },
       {
-        "command": "speedyGit.openNewGraphTab",
+        "command": "multiRepoGraph.openNewGraphTab",
         "title": "Open New Graph Tab",
-        "category": "Speedy Git",
+        "category": "Multi-Repo Git Graph",
         "icon": "$(add)"
       },
       {
-        "command": "speedyGit.openForRepo",
-        "title": "Open in Speedy Git",
-        "category": "Speedy Git",
+        "command": "multiRepoGraph.openForRepo",
+        "title": "Open in Multi-Repo Git Graph",
+        "category": "Multi-Repo Git Graph",
         "icon": "$(zap)"
       }
     ],
     "keybindings": [
       {
-        "command": "speedyGit.showGraph",
+        "command": "multiRepoGraph.showGraph",
         "key": "ctrl+shift+g",
         "mac": "cmd+shift+g",
         "when": "workspaceFolderCount > 0"
@@ -84,42 +84,42 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "speedyGit.showGraph",
+          "command": "multiRepoGraph.showGraph",
           "when": "workspaceFolderCount > 0"
         },
         {
-          "command": "speedyGit.openNewGraphTab",
+          "command": "multiRepoGraph.openNewGraphTab",
           "when": "workspaceFolderCount > 0"
         }
       ],
       "scm/title": [
         {
           "when": "scmProvider == git",
-          "command": "speedyGit.openForRepo",
+          "command": "multiRepoGraph.openForRepo",
           "group": "navigation"
         }
       ]
     },
     "configuration": {
-      "title": "Speedy Git",
+      "title": "Multi-Repo Git Graph",
       "properties": {
-        "speedyGit.telemetry.enabled": {
+        "multiRepoGraph.telemetry.enabled": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "tags": [
             "telemetry",
             "usesOnlineServices"
           ],
-          "markdownDescription": "Allow Speedy Git to send anonymous usage statistics (feature usage counts, error codes, performance timings — never repository names, branch names, file paths, or anything you type). **Note:** anonymous usage statistics are sent only when this setting and VS Code's global `#telemetry.telemetryLevel#` setting are both enabled — turning either off stops all collection. See [telemetry details](https://github.com/onlineeric/speedy-git-ext#telemetry)."
+          "markdownDescription": "Has no effect. This fork never sends usage statistics."
         },
-        "speedyGit.batchCommitSize": {
+        "multiRepoGraph.batchCommitSize": {
           "type": "number",
           "default": 500,
           "minimum": 1,
           "maximum": 10000,
           "markdownDescription": "Number of commits to load per batch in the Git graph panel. Lower values give faster initial load; higher values reduce scroll-triggered fetches for large repositories. Values above 10000 are capped."
         },
-        "speedyGit.statusBarText": {
+        "multiRepoGraph.statusBarText": {
           "type": "string",
           "enum": [
             "iconAndText",
@@ -130,13 +130,13 @@
             "Icon only"
           ],
           "enumDescriptions": [
-            "Show the lightning icon followed by 'Speedy Git'.",
+            "Show the lightning icon followed by 'Multi-Repo Git Graph'.",
             "Show only the lightning icon."
           ],
           "default": "iconAndText",
-          "markdownDescription": "Label shown for the Speedy Git status bar item."
+          "markdownDescription": "Label shown for the Multi-Repo Git Graph status bar item."
         },
-        "speedyGit.graphColors": {
+        "multiRepoGraph.graphColors": {
           "type": "array",
           "items": {
             "type": "string"
@@ -155,7 +155,7 @@
           ],
           "markdownDescription": "Array of hex color strings used for graph branch lines. Colors cycle in order."
         },
-        "speedyGit.dateFormat": {
+        "multiRepoGraph.dateFormat": {
           "type": "string",
           "enum": [
             "relative",
@@ -169,67 +169,67 @@
             "YYYY-MM-DD HH:mm (e.g. 2026-05-18 14:32)",
             "YYYY-MM-DD (e.g. 2026-05-18)",
             "Follow the OS locale (toLocaleString)",
-            "Use the date-fns token string in `speedyGit.dateFormatCustom`"
+            "Use the date-fns token string in `multiRepoGraph.dateFormatCustom`"
           ],
           "default": "relative",
-          "markdownDescription": "Date display format for commit rows. Choose `custom` to provide your own [date-fns format tokens](https://date-fns.org/docs/format) in `#speedyGit.dateFormatCustom#`."
+          "markdownDescription": "Date display format for commit rows. Choose `custom` to provide your own [date-fns format tokens](https://date-fns.org/docs/format) in `#multiRepoGraph.dateFormatCustom#`."
         },
-        "speedyGit.dateFormatCustom": {
+        "multiRepoGraph.dateFormatCustom": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Custom date format using [date-fns tokens](https://date-fns.org/docs/format) (e.g. `yyyy-MM-dd HH:mm`, `MMM d, yyyy`). Only used when `#speedyGit.dateFormat#` is set to `custom`. Falls back to `relative` if the token string is invalid or empty."
+          "markdownDescription": "Custom date format using [date-fns tokens](https://date-fns.org/docs/format) (e.g. `yyyy-MM-dd HH:mm`, `MMM d, yyyy`). Only used when `#multiRepoGraph.dateFormat#` is set to `custom`. Falls back to `relative` if the token string is invalid or empty."
         },
-        "speedyGit.avatars.enabled": {
+        "multiRepoGraph.avatars.enabled": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Show author avatars in the commit graph. Initials are used when an avatar is unavailable."
         },
-        "speedyGit.avatars.refreshDays": {
+        "multiRepoGraph.avatars.refreshDays": {
           "type": "number",
           "default": 30,
           "minimum": 1,
           "maximum": 365,
           "markdownDescription": "How long a looked-up avatar stays cached before it is refreshed in the background. Avatars are cached per author email and reused across repositories, so a longer window means far fewer GitHub API requests. A stale entry keeps displaying while it refreshes, and GitHub avatar image URLs are stable — so a longer window does not mean out-of-date pictures."
         },
-        "speedyGit.git.timeoutSeconds": {
+        "multiRepoGraph.git.timeoutSeconds": {
           "type": "number",
           "default": 60,
           "minimum": 0,
-          "markdownDescription": "Maximum time, in seconds, any git command Speedy Git runs may take before it is stopped. This covers everything: loading the graph, push, pull, fetch, commit hooks and the rest. Values below 15 are treated as 15. Set to `0` for no timeout; a command that stalls (a network hang, an unanswered credential prompt) then keeps running until you reload the window."
+          "markdownDescription": "Maximum time, in seconds, any git command Multi-Repo Git Graph runs may take before it is stopped. This covers everything: loading the graph, push, pull, fetch, commit hooks and the rest. Values below 15 are treated as 15. Set to `0` for no timeout; a command that stalls (a network hang, an unanswered credential prompt) then keeps running until you reload the window."
         },
-        "speedyGit.showRemoteBranches": {
+        "multiRepoGraph.showRemoteBranches": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Show remote branch labels in the graph."
         },
-        "speedyGit.showTags": {
+        "multiRepoGraph.showTags": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Show tag labels in the graph."
         },
-        "speedyGit.overScan": {
+        "multiRepoGraph.overScan": {
           "type": "number",
           "default": 20,
           "minimum": 0,
           "maximum": 200,
           "markdownDescription": "Number of commit rows to render above and below the visible graph viewport. Higher values reduce blank-row flicker during fast scrolling at the cost of more DOM nodes. Lower values use less memory but may show empty rows when scrolling quickly."
         },
-        "speedyGit.toolbar.showLabels": {
+        "multiRepoGraph.toolbar.showLabels": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Show a small text label under each toolbar icon button (Filter, Search, Compare, Worktrees, Refresh, Fetch, View, Remote, Settings, News, Help). You can also toggle this by right-clicking any toolbar button."
         },
-        "speedyGit.toolbar.showRemoteButton": {
+        "multiRepoGraph.toolbar.showRemoteButton": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Show the Remote (Manage Remotes) button in the toolbar. You can also toggle this by right-clicking the View, Remote, or Settings toolbar button."
         },
-        "speedyGit.autolinks.remoteProvider.enabled": {
+        "multiRepoGraph.autolinks.remoteProvider.enabled": {
           "type": "boolean",
           "default": true,
           "markdownDescription": "Turn issue and pull request references in commit messages into links to the repository's GitHub or GitLab page: `#123` and `GH-123` on GitHub, `#123` (issue) and `!123` (merge request) on GitLab, and `owner/repo#123` on either. Links are added only when the remote is on `github.com` or `gitlab.com`: the remote is the only one, or `upstream`, or else `origin`. Any other host gets no links, so a link never points somewhere it might be wrong."
         },
-        "speedyGit.autolinks.custom": {
+        "multiRepoGraph.autolinks.custom": {
           "type": "array",
           "default": [],
           "items": {
@@ -261,12 +261,12 @@
           },
           "markdownDescription": "Turn ticket references in commit messages into links, e.g. Jira keys like `ABCD-123`. Each entry is a `prefix` and a `url` with `<num>` where the number goes. The format matches GitLens's `gitlens.autolinks`, so an existing GitLens list can be copied in. You can also edit this list from the graph's **View** settings."
         },
-        "speedyGit.worktree.basePath": {
+        "multiRepoGraph.worktree.basePath": {
           "type": "string",
           "default": "../${repoName}.worktrees",
-          "markdownDescription": "Parent directory where new git worktrees are created. The sanitized ref name is appended below it as the worktree folder — either nested or flattened, per `#speedyGit.worktree.folderNameStyle#` (e.g. `../myrepo.worktrees/feat/foo` or `../myrepo.worktrees/feat-foo`). Supports the `${repoName}` token. Defaults to a sibling folder so worktrees stay outside the watched working tree (protects graph performance)."
+          "markdownDescription": "Parent directory where new git worktrees are created. The sanitized ref name is appended below it as the worktree folder — either nested or flattened, per `#multiRepoGraph.worktree.folderNameStyle#` (e.g. `../myrepo.worktrees/feat/foo` or `../myrepo.worktrees/feat-foo`). Supports the `${repoName}` token. Defaults to a sibling folder so worktrees stay outside the watched working tree (protects graph performance)."
         },
-        "speedyGit.worktree.folderNameStyle": {
+        "multiRepoGraph.worktree.folderNameStyle": {
           "type": "string",
           "enum": [
             "nested",

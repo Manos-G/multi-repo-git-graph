@@ -13,15 +13,15 @@ function group(
   return { viewColumn, tabCount, activeWebviewViewType };
 }
 
-const graphGroup = group(1, 1, 'mainThreadWebview-speedyGit');
+const graphGroup = group(1, 1, 'mainThreadWebview-multiRepoGraph');
 
 describe('isGraphWebviewViewType', () => {
   it('accepts the namespaced viewType VS Code reports for a panel tab', () => {
-    expect(isGraphWebviewViewType('mainThreadWebview-speedyGit')).toBe(true);
+    expect(isGraphWebviewViewType('mainThreadWebview-multiRepoGraph')).toBe(true);
   });
 
   it('accepts the bare viewType, in case the namespacing ever goes away', () => {
-    expect(isGraphWebviewViewType('speedyGit')).toBe(true);
+    expect(isGraphWebviewViewType('multiRepoGraph')).toBe(true);
   });
 
   it('rejects another extension’s webview and a missing viewType', () => {

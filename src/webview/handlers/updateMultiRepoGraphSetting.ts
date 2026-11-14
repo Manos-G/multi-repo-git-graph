@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { isUnregisteredSettingError, UNREGISTERED_SETTING_MESSAGE } from '../../utils/settingsWriteErrors.js';
 
 /**
- * Write one `speedyGit.*` setting from a webview request.
+ * Write one `multiRepoGraph.*` setting from a webview request.
  *
  * The new value never comes back from here: the settings-change listener in
  * `ExtensionController` picks the write up and broadcasts fresh `settingsData`
@@ -10,21 +10,21 @@ import { isUnregisteredSettingError, UNREGISTERED_SETTING_MESSAGE } from '../../
  * Centralized so the configuration section name and that contract are stated
  * once rather than per handler.
  */
-export function updateSpeedyGitSetting(key: string, value: unknown): Promise<void> {
-  return writeSetting(vscode.workspace.getConfiguration('speedyGit'), key, value, vscode.ConfigurationTarget.Global);
+export function updateMultiRepoGraphSetting(key: string, value: unknown): Promise<void> {
+  return writeSetting(vscode.workspace.getConfiguration('multiRepoGraph'), key, value, vscode.ConfigurationTarget.Global);
 }
 
 /**
- * Write one `speedyGit.*` setting into whichever scope already defines it.
+ * Write one `multiRepoGraph.*` setting into whichever scope already defines it.
  *
  * A Global write shadowed by an existing Workspace value produces no effective
  * change, so a UI affordance that hides itself once the setting matches would
  * never disappear and the click would look broken. Folder scope is not
- * considered: `speedyGit.worktree.*` is window-scoped, so a folder-level value
+ * considered: `multiRepoGraph.worktree.*` is window-scoped, so a folder-level value
  * cannot apply.
  */
-export function updateSpeedyGitSettingInDefinedScope(key: string, value: unknown): Promise<void> {
-  const config = vscode.workspace.getConfiguration('speedyGit');
+export function updateMultiRepoGraphSettingInDefinedScope(key: string, value: unknown): Promise<void> {
+  const config = vscode.workspace.getConfiguration('multiRepoGraph');
   const target = config.inspect(key)?.workspaceValue !== undefined
     ? vscode.ConfigurationTarget.Workspace
     : vscode.ConfigurationTarget.Global;
@@ -55,7 +55,7 @@ async function writeSetting(
 
 async function offerWindowReload(): Promise<void> {
   const reload = 'Reload Window';
-  const choice = await vscode.window.showWarningMessage(`Speedy Git: ${UNREGISTERED_SETTING_MESSAGE}`, reload);
+  const choice = await vscode.window.showWarningMessage(`Multi-Repo Git Graph: ${UNREGISTERED_SETTING_MESSAGE}`, reload);
   if (choice === reload) {
     await vscode.commands.executeCommand('workbench.action.reloadWindow');
   }

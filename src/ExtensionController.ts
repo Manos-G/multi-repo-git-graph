@@ -34,22 +34,22 @@ import { setGitCommandTimeoutSeconds } from './services/gitCommandTimeout.js';
 
 /** Settings the webview renders from, so a change to one reloads every graph. */
 const WEBVIEW_SETTING_SECTIONS = [
-  'speedyGit.graphColors',
-  'speedyGit.dateFormat',
-  'speedyGit.dateFormatCustom',
-  'speedyGit.avatars.enabled',
-  'speedyGit.avatars.refreshDays',
-  'speedyGit.showRemoteBranches',
-  'speedyGit.showTags',
-  'speedyGit.batchCommitSize',
-  'speedyGit.overScan',
-  'speedyGit.worktree.basePath',
-  'speedyGit.worktree.folderNameStyle',
-  'speedyGit.toolbar.showLabels',
-  'speedyGit.toolbar.showRemoteButton',
-  'speedyGit.autolinks.custom',
-  'speedyGit.autolinks.remoteProvider.enabled',
-  'speedyGit.git.timeoutSeconds',
+  'multiRepoGraph.graphColors',
+  'multiRepoGraph.dateFormat',
+  'multiRepoGraph.dateFormatCustom',
+  'multiRepoGraph.avatars.enabled',
+  'multiRepoGraph.avatars.refreshDays',
+  'multiRepoGraph.showRemoteBranches',
+  'multiRepoGraph.showTags',
+  'multiRepoGraph.batchCommitSize',
+  'multiRepoGraph.overScan',
+  'multiRepoGraph.worktree.basePath',
+  'multiRepoGraph.worktree.folderNameStyle',
+  'multiRepoGraph.toolbar.showLabels',
+  'multiRepoGraph.toolbar.showRemoteButton',
+  'multiRepoGraph.autolinks.custom',
+  'multiRepoGraph.autolinks.remoteProvider.enabled',
+  'multiRepoGraph.git.timeoutSeconds',
 ];
 
 /**
@@ -132,13 +132,13 @@ export class ExtensionController {
 
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
     statusBar.text = this.readStatusBarText();
-    statusBar.tooltip = 'Open Speedy Git';
+    statusBar.tooltip = 'Open Multi-Repo Git Graph';
     // Same command as the palette and the keybinding — it means "return to the
     // most recently active graph, or open the first one" — but carrying its own
     // trigger, so the status bar stops masquerading as a Command Palette use.
     statusBar.command = {
-      command: 'speedyGit.showGraph',
-      title: 'Open Speedy Git',
+      command: 'multiRepoGraph.showGraph',
+      title: 'Open Multi-Repo Git Graph',
       arguments: ['statusBar'] satisfies [PanelOpenedTrigger],
     };
     this.statusBarItem = statusBar;
@@ -216,16 +216,16 @@ export class ExtensionController {
   private registerSettingsListener() {
     this.context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((event) => {
-        if (event.affectsConfiguration('speedyGit.statusBarText') && this.statusBarItem) {
+        if (event.affectsConfiguration('multiRepoGraph.statusBarText') && this.statusBarItem) {
           this.statusBarItem.text = this.readStatusBarText();
         }
 
-        if (event.affectsConfiguration('speedyGit.git.timeoutSeconds')) {
+        if (event.affectsConfiguration('multiRepoGraph.git.timeoutSeconds')) {
           this.applyGitCommandTimeout();
         }
 
-        if (this.didSpeedyGitWebviewSettingsChange(event)) {
-          // `speedyGit.*` settings are extension-wide and apply to every tab.
+        if (this.didMultiRepoGraphWebviewSettingsChange(event)) {
+          // `multiRepoGraph.*` settings are extension-wide and apply to every tab.
           const settings = this.readUserSettings();
           for (const tab of this.registry.all()) tab.sendSettingsData(settings);
         }
@@ -308,7 +308,7 @@ export class ExtensionController {
 
     const repoPath = this.savedDefaultRepo();
     if (!repoPath) {
-      vscode.window.showErrorMessage('Speedy Git: No workspace folder open');
+      vscode.window.showErrorMessage('Multi-Repo Git Graph: No workspace folder open');
       return;
     }
     await this.createTab(repoPath, vscode.ViewColumn.Active, openedBy);
@@ -353,7 +353,7 @@ export class ExtensionController {
     const source = origin ?? this.mostRecentlyActiveTab();
     const repoPath = source?.topLevelRepoPath ?? this.savedDefaultRepo();
     if (!repoPath) {
-      vscode.window.showErrorMessage('Speedy Git: No workspace folder open');
+      vscode.window.showErrorMessage('Multi-Repo Git Graph: No workspace folder open');
       return;
     }
 
@@ -442,7 +442,7 @@ export class ExtensionController {
 
     const suffix = orphaned.length > 1 ? ` (${orphaned.length} graphs)` : '';
     vscode.window.showInformationMessage(
-      `Speedy Git: The displayed repository was removed. Switched to "${fallback.displayName}".${suffix}`,
+      `Multi-Repo Git Graph: The displayed repository was removed. Switched to "${fallback.displayName}".${suffix}`,
     );
   }
 
@@ -480,21 +480,21 @@ export class ExtensionController {
 
   private readGitTimeoutSeconds(): number {
     return normalizeGitTimeoutSeconds(
-      vscode.workspace.getConfiguration('speedyGit').get<unknown>('git.timeoutSeconds'),
+      vscode.workspace.getConfiguration('multiRepoGraph').get<unknown>('git.timeoutSeconds'),
     );
   }
 
-  private didSpeedyGitWebviewSettingsChange(event: vscode.ConfigurationChangeEvent): boolean {
+  private didMultiRepoGraphWebviewSettingsChange(event: vscode.ConfigurationChangeEvent): boolean {
     return WEBVIEW_SETTING_SECTIONS.some((section) => event.affectsConfiguration(section));
   }
 
   private readStatusBarText(): string {
-    const mode = vscode.workspace.getConfiguration('speedyGit').get<string>('statusBarText', 'iconAndText');
-    return mode === 'icon' ? '$(zap)' : '$(zap) Speedy Git';
+    const mode = vscode.workspace.getConfiguration('multiRepoGraph').get<string>('statusBarText', 'iconAndText');
+    return mode === 'icon' ? '$(zap)' : '$(zap) Multi-Repo Git Graph';
   }
 
   readUserSettings(): UserSettings {
-    const config = vscode.workspace.getConfiguration('speedyGit');
+    const config = vscode.workspace.getConfiguration('multiRepoGraph');
     const graphColors = this.normalizeGraphColors(
       config.get<unknown>('graphColors', [...DEFAULT_USER_SETTINGS.graphColors])
     );

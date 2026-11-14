@@ -125,7 +125,7 @@ export class GitHubAvatarService {
     try {
       const headers: Record<string, string> = {
         Accept: 'application/vnd.github.v3+json',
-        'User-Agent': 'speedy-git-ext',
+        'User-Agent': 'multi-repo-git-graph',
       };
       if (token) {
         headers.Authorization = `Bearer ${token}`;

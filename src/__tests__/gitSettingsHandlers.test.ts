@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const updateSetting = vi.fn<(key: string, value: unknown) => Promise<void>>();
-vi.mock('../webview/handlers/updateSpeedyGitSetting.js', () => ({
-  updateSpeedyGitSettingInDefinedScope: (key: string, value: unknown) => updateSetting(key, value),
+vi.mock('../webview/handlers/updateMultiRepoGraphSetting.js', () => ({
+  updateMultiRepoGraphSettingInDefinedScope: (key: string, value: unknown) => updateSetting(key, value),
 }));
 
 import { gitSettingsHandlers } from '../webview/handlers/gitSettingsHandlers.js';

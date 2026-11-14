@@ -120,7 +120,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         <WhatsNewSection title="No more waiting on the Filter panel">
           <StepFlow>
             <Step label="1" title="Open a graph" accent={SHOWCASE_BLUE_COLOR}>
-              Once the first commits are on screen, Speedy Git reads the repository’s authors in the background.
+              Once the first commits are on screen, Multi-Repo Git Graph reads the repository’s authors in the background.
             </Step>
             <Step label="2" title="Open Filter" accent={SHOWCASE_GREEN_COLOR}>
               The <FilterIcon className="inline align-[-2px]" /> <UiLabel>Filter</UiLabel> button. The{' '}
@@ -189,8 +189,8 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
             />
           </div>
           <p className={`${bodyTextClassName} mt-3`}>
-            It covers everything Speedy Git runs: loading the graph, push, pull, fetch, commit hooks and the rest, so
-            there is no list of slow commands to learn. It is also <code>speedyGit.git.timeoutSeconds</code> in VS
+            It covers everything Multi-Repo Git Graph runs: loading the graph, push, pull, fetch, commit hooks and the rest, so
+            there is no list of slow commands to learn. It is also <code>multiRepoGraph.git.timeoutSeconds</code> in VS
             Code’s Settings.
           </p>
         </WhatsNewSection>
@@ -604,7 +604,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
   },
   {
     version: '5.17.0',
-    headline: 'Speedy Git is now multi-tab — open a graph per repository and arrange them like any other editor.',
+    headline: 'Multi-Repo Git Graph is now multi-tab — open a graph per repository and arrange them like any other editor.',
     illustration: <MultiTabIllustration />,
     content: (
       <div className="space-y-6">
@@ -628,7 +628,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
               The new <UiLabel>Open New Graph Tab</UiLabel> button sits beside <em>Go to HEAD</em> in every
               graph’s toolbar. One click opens another graph straight away — no picker, no confirmation — on the
               same repository, in the same editor group.{' '}
-              <UiLabel>Speedy Git: Open New Graph Tab</UiLabel> in the Command Palette does the same. Each tab is
+              <UiLabel>Multi-Repo Git Graph: Open New Graph Tab</UiLabel> in the Command Palette does the same. Each tab is
               titled with the repository or submodule it is showing.
             </p>
           </div>
@@ -638,7 +638,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
           <FeatureGrid>
             <FeatureCard mark="S" title="Split left and right" accent={SHOWCASE_BLUE_COLOR}>
               Drag a graph into another editor group: one repository on the left, another on the right. VS Code’s
-              own editor groups do the arranging, so Speedy Git adds no tab bar of its own.
+              own editor groups do the arranging, so Multi-Repo Git Graph adds no tab bar of its own.
             </FeatureCard>
             <FeatureCard mark="P" title="Parent and submodule" accent={SHOWCASE_PURPLE_COLOR}>
               Keep the parent repository open while a second graph follows its submodule. Moving the submodule’s
@@ -673,8 +673,8 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         <WhatsNewSection title="Every view keeps its bearings">
           <FeatureGrid>
             <FeatureCard mark="↩" title="Opening returns you there" accent={SHOWCASE_BLUE_COLOR}>
-              <UiLabel>Show Speedy Git</UiLabel>, <code>Ctrl/Cmd+Shift+G</code> and the status bar item reveal the
-              graph you were last in, and create one only when none is open. <UiLabel>Open in Speedy Git</UiLabel>{' '}
+              <UiLabel>Show Multi-Repo Git Graph</UiLabel>, <code>Ctrl/Cmd+Shift+G</code> and the status bar item reveal the
+              graph you were last in, and create one only when none is open. <UiLabel>Open in Multi-Repo Git Graph</UiLabel>{' '}
               in the Source Control view reveals a graph already showing that repository, or opens a new one.
               Neither ever retargets a graph you have open.
             </FeatureCard>

@@ -1,5 +1,5 @@
 /**
- * Whether to tell the user that *another* Speedy Git view is mid-operation on
+ * Whether to tell the user that *another* Multi-Repo Git Graph view is mid-operation on
  * this same working tree, and in what words.
  *
  * It is a notice and nothing more. No control is disabled by a peer's work: a
@@ -10,7 +10,7 @@
  *
  * The text names no repository and no branch, so it is safe wherever it lands.
  */
-export const PEER_ACTIVITY_NOTICE = 'Another Speedy Git view is running a Git operation.';
+export const PEER_ACTIVITY_NOTICE = 'Another Multi-Repo Git Graph view is running a Git operation.';
 
 export function peerActivityNotice(peerBusy: boolean, ownOperationInProgress: boolean): string | null {
   // This tab's own busy state already speaks for itself; saying both at once

@@ -1,6 +1,6 @@
 import type { RequestHandlerMap } from '../WebviewMessageRouter.js';
 import { clampAvatarRefreshDays, DEFAULT_USER_SETTINGS } from '../../../shared/types.js';
-import { updateSpeedyGitSetting } from './updateSpeedyGitSetting.js';
+import { updateMultiRepoGraphSetting } from './updateMultiRepoGraphSetting.js';
 
 export const avatarHandlers = {
   getAvatarAuthState: async (_message, context) => {
@@ -25,7 +25,7 @@ export const avatarHandlers = {
 
   setAvatarRefreshDays: async (message) => {
     const days = clampAvatarRefreshDays(message.payload.days, DEFAULT_USER_SETTINGS.avatarRefreshDays);
-    await updateSpeedyGitSetting('avatars.refreshDays', days);
+    await updateMultiRepoGraphSetting('avatars.refreshDays', days);
   },
   clearAvatarCache: async (_message, context) => {
     await context.clearAvatarCache();

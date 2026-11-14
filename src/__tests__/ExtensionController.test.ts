@@ -148,7 +148,7 @@ describe('ExtensionController status bar text', () => {
 
   it('defaults to icon + text when statusBarText config is unset', () => {
     createController();
-    expect(getStatusBarItem()?.text).toBe('$(zap) Speedy Git');
+    expect(getStatusBarItem()?.text).toBe('$(zap) Multi-Repo Git Graph');
   });
 
   it('renders icon only when statusBarText is set to "icon"', () => {
@@ -160,28 +160,28 @@ describe('ExtensionController status bar text', () => {
   it('renders icon + text when statusBarText is set to "iconAndText"', () => {
     configValues.statusBarText = 'iconAndText';
     createController();
-    expect(getStatusBarItem()?.text).toBe('$(zap) Speedy Git');
+    expect(getStatusBarItem()?.text).toBe('$(zap) Multi-Repo Git Graph');
   });
 
   it('falls back to icon + text for unrecognized values', () => {
     // Anything that is not exactly 'icon' uses the iconAndText label.
     configValues.statusBarText = 'unexpected-mode';
     createController();
-    expect(getStatusBarItem()?.text).toBe('$(zap) Speedy Git');
+    expect(getStatusBarItem()?.text).toBe('$(zap) Multi-Repo Git Graph');
   });
 
   it('updates the status bar text live when the statusBarText setting changes', () => {
     configValues.statusBarText = 'iconAndText';
     createController();
-    expect(getStatusBarItem()?.text).toBe('$(zap) Speedy Git');
+    expect(getStatusBarItem()?.text).toBe('$(zap) Multi-Repo Git Graph');
 
     configValues.statusBarText = 'icon';
-    fireConfigChange('speedyGit.statusBarText');
+    fireConfigChange('multiRepoGraph.statusBarText');
     expect(getStatusBarItem()?.text).toBe('$(zap)');
 
     configValues.statusBarText = 'iconAndText';
-    fireConfigChange('speedyGit.statusBarText');
-    expect(getStatusBarItem()?.text).toBe('$(zap) Speedy Git');
+    fireConfigChange('multiRepoGraph.statusBarText');
+    expect(getStatusBarItem()?.text).toBe('$(zap) Multi-Repo Git Graph');
   });
 
   it('does not touch status bar text for unrelated setting changes', () => {
@@ -191,11 +191,11 @@ describe('ExtensionController status bar text', () => {
     // Simulate the user toggling a webview-only setting. The status bar text
     // should remain unchanged even if the config value happened to differ.
     configValues.statusBarText = 'icon';
-    fireConfigChange('speedyGit.graphColors');
-    expect(getStatusBarItem()?.text).toBe('$(zap) Speedy Git');
+    fireConfigChange('multiRepoGraph.graphColors');
+    expect(getStatusBarItem()?.text).toBe('$(zap) Multi-Repo Git Graph');
 
-    fireConfigChange('speedyGit.overScan');
-    expect(getStatusBarItem()?.text).toBe('$(zap) Speedy Git');
+    fireConfigChange('multiRepoGraph.overScan');
+    expect(getStatusBarItem()?.text).toBe('$(zap) Multi-Repo Git Graph');
   });
 });
 
@@ -209,18 +209,18 @@ describe('ExtensionController webview settings watch', () => {
   /** Ask the controller whether one changed section should re-broadcast settings. */
   function watches(section: string): boolean {
     const controller = createController() as unknown as {
-      didSpeedyGitWebviewSettingsChange: (event: { affectsConfiguration: (key: string) => boolean }) => boolean;
+      didMultiRepoGraphWebviewSettingsChange: (event: { affectsConfiguration: (key: string) => boolean }) => boolean;
     };
-    return controller.didSpeedyGitWebviewSettingsChange({
+    return controller.didMultiRepoGraphWebviewSettingsChange({
       affectsConfiguration: (key: string) => key === section,
     });
   }
 
   it('watches the worktree folder-name style, so a Settings UI edit reaches an open dialog', () => {
-    expect(watches('speedyGit.worktree.folderNameStyle')).toBe(true);
+    expect(watches('multiRepoGraph.worktree.folderNameStyle')).toBe(true);
   });
 
   it('ignores unrelated sections', () => {
-    expect(watches('speedyGit.statusBarText')).toBe(false);
+    expect(watches('multiRepoGraph.statusBarText')).toBe(false);
   });
 });

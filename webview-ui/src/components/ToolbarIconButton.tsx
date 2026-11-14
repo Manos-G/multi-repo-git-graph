@@ -25,7 +25,7 @@ export const TOGGLE_BUTTON_TONES = {
 } as const;
 
 interface ToolbarIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** Text shown under the icon when `speedyGit.toolbar.showLabels` is enabled. */
+  /** Text shown under the icon when `multiRepoGraph.toolbar.showLabels` is enabled. */
   label: string;
   icon: ReactNode;
   /**
@@ -38,7 +38,7 @@ interface ToolbarIconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
 
 /**
  * Toolbar icon button with an optional tiny text label under the icon,
- * driven by the `speedyGit.toolbar.showLabels` setting (default on).
+ * driven by the `multiRepoGraph.toolbar.showLabels` setting (default on).
  *
  * Right-clicking any toolbar button opens a context menu whose "Show/Hide
  * Labels" item toggles the labels for ALL toolbar buttons at once — it persists

@@ -337,7 +337,7 @@ export function ControlBar() {
               trackUiInteraction('toolbar', 'whatsNew');
               useGraphStore.getState().setWhatsNewBrowseOpen(true);
             }}
-            aria-label="What's new in Speedy Git"
+            aria-label="What's new in Multi-Repo Git Graph"
             {...TOGGLE_BUTTON_TONES.inactive}
             title="What's new: release notes for every version"
             extraMenuItems={<RemoteButtonToggleItem />}

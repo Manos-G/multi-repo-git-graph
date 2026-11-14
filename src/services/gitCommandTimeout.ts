@@ -1,7 +1,7 @@
 import { DEFAULT_USER_SETTINGS, NO_GIT_TIMEOUT } from '../../shared/types.js';
 
 /**
- * The timeout every git spawn uses, from `speedyGit.git.timeoutSeconds`.
+ * The timeout every git spawn uses, from `multiRepoGraph.git.timeoutSeconds`.
  *
  * Held here rather than read from VS Code per spawn: a repo load makes many
  * spawns, and keeping `vscode` out of `GitExecutor` keeps it testable as plain
@@ -41,7 +41,7 @@ export function gitCommandTimeoutDelayMs(seconds: number): number | undefined {
 
 /** Where the user can change the limit; part of every timeout message. */
 export const GIT_TIMEOUT_SETTING_HINT =
-  'To allow longer, raise "Git command timeout" in the View dialog\'s Git tab (speedyGit.git.timeoutSeconds), or set it to 0 for no timeout.';
+  'To allow longer, raise "Git command timeout" in the View dialog\'s Git tab (multiRepoGraph.git.timeoutSeconds), or set it to 0 for no timeout.';
 
 /** What the user sees when a command is stopped: the limit, and where to raise it. */
 export function gitTimeoutMessage(seconds: number): string {

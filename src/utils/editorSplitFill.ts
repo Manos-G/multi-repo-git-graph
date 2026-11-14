@@ -14,7 +14,7 @@
  */
 
 /** The `viewType` passed to `createWebviewPanel` for a graph. */
-export const GRAPH_WEBVIEW_VIEW_TYPE = 'speedyGit';
+export const GRAPH_WEBVIEW_VIEW_TYPE = 'multiRepoGraph';
 
 export interface EditorGroupSnapshot {
   viewColumn: number;
@@ -25,7 +25,7 @@ export interface EditorGroupSnapshot {
 
 /**
  * VS Code reports an extension panel's tab `viewType` namespaced
- * (`mainThreadWebview-speedyGit`), and that prefix is not part of the API
+ * (`mainThreadWebview-multiRepoGraph`), and that prefix is not part of the API
  * contract — so match the suffix rather than the whole string.
  */
 export function isGraphWebviewViewType(viewType: string | null | undefined): boolean {

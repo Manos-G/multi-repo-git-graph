@@ -34,7 +34,7 @@ const NO_ERRORS: ReadonlyMap<number, CustomAutolinkErrors> = new Map();
 /**
  * The AutoLinks tab of the Settings dialog: the GitHub/GitLab switch, then the
  * custom autolinks editor as its own section below. Both are VS Code settings
- * (`speedyGit.autolinks.*`); this edits them, so the two stay one setting.
+ * (`multiRepoGraph.autolinks.*`); this edits them, so the two stay one setting.
  */
 export function AutolinkSettingsSection() {
   return (

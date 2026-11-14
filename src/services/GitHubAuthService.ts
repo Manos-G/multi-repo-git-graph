@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const OPT_IN_KEY = 'speedyGit.avatarAuthOptIn.v1';
+const OPT_IN_KEY = 'multiRepoGraph.avatarAuthOptIn.v1';
 
 /**
  * `repo` grants read access to private repositories. Avatar lookups hit
@@ -30,7 +30,7 @@ export type AuthRequestResult = 'granted' | 'declined' | 'failed';
 export type AvatarAuthChange = 'granted' | 'revoked' | 'refreshed';
 
 /**
- * Owns whether Speedy Git may use a GitHub session for avatar lookups.
+ * Owns whether Multi-Repo Git Graph may use a GitHub session for avatar lookups.
  *
  * The opt-in is explicit and persisted: a session that merely happens to exist
  * (granted to some other extension, or to us in an earlier session) is never
@@ -134,7 +134,7 @@ export class GitHubAuthService {
    * "Remove token": stop using the session. VS Code exposes no API for an
    * extension to revoke its own grant, so the session itself stays in the
    * Accounts menu — we clear the opt-in and drop the token, which is what
-   * actually governs whether Speedy Git authenticates.
+   * actually governs whether Multi-Repo Git Graph authenticates.
    */
   async removeAuthorization(): Promise<void> {
     const wasOptedIn = this.isOptedIn();

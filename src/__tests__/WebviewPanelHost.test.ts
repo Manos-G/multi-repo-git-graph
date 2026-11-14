@@ -87,7 +87,7 @@ describe('WebviewPanelHost', () => {
     host.postMessage({ type: 'loading', payload: { loading: true } });
 
     expect(vscodeMock.createWebviewPanel).toHaveBeenCalledWith(
-      'speedyGit',
+      'multiRepoGraph',
       'test-repo',
       2,
       expect.objectContaining({ enableScripts: true, retainContextWhenHidden: true }),

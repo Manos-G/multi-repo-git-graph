@@ -145,7 +145,7 @@ interface GraphStore {
   revertOptions: RevertOptions;
   rebaseInProgress: boolean;
   /**
-   * Another Speedy Git view on this same working tree is running an operation.
+   * Another Multi-Repo Git Graph view on this same working tree is running an operation.
    *
    * Drives a notice only. Deliberately NOT folded into
    * `useOperationInProgress`, which means "*this* tab is busy" — merging them

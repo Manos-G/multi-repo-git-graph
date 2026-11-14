@@ -5,7 +5,7 @@ import {
 } from '../../../shared/autolinks.js';
 import type { RequestHandlerMap } from '../WebviewMessageRouter.js';
 import { writeSettingOrToast, writeSettingWithReply } from './settingWriteReplies.js';
-import { updateSpeedyGitSettingInDefinedScope } from './updateSpeedyGitSetting.js';
+import { updateMultiRepoGraphSettingInDefinedScope } from './updateMultiRepoGraphSetting.js';
 
 /**
  * The View settings dialog's Autolinks section.
@@ -35,13 +35,13 @@ export const autolinkHandlers = {
       return;
     }
     await writeSettingWithReply(context, requestId, 'custom autolinks', () =>
-      updateSpeedyGitSettingInDefinedScope('autolinks.custom', autolinks),
+      updateMultiRepoGraphSettingInDefinedScope('autolinks.custom', autolinks),
     );
   },
 
   setRemoteAutolinksEnabled: async (message, context) => {
     await writeSettingOrToast(context, 'the GitHub/GitLab autolinks setting', () =>
-      updateSpeedyGitSettingInDefinedScope('autolinks.remoteProvider.enabled', message.payload.enabled === true),
+      updateMultiRepoGraphSettingInDefinedScope('autolinks.remoteProvider.enabled', message.payload.enabled === true),
     );
   },
 } satisfies Pick<RequestHandlerMap, 'setCustomAutolinks' | 'setRemoteAutolinksEnabled'>;

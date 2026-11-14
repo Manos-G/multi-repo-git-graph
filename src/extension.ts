@@ -7,17 +7,14 @@ let controller: ExtensionController | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
   const activationStart = performance.now();
-  const log = vscode.window.createOutputChannel('Speedy Git', { log: true });
+  const log = vscode.window.createOutputChannel('Multi-Repo Git Graph', { log: true });
   context.subscriptions.push(log);
 
   log.info('Extension activated');
 
-  // Connection string is baked in by esbuild `define` on production builds
-  // only; dev/test builds see '' and get the structural no-op (FR-015).
-  const telemetry = createTelemetryService(
-    context,
-    process.env.SPEEDYGIT_TELEMETRY_CONNECTION_STRING ?? '',
-  );
+  // Fork: telemetry is always off. An empty connection string gives the no-op
+  // service, so no usage data is ever sent, whatever the build environment has.
+  const telemetry = createTelemetryService(context, '');
   context.subscriptions.push(telemetry);
 
   controller = new ExtensionController(context, log, telemetry, activationStart);
@@ -34,16 +31,16 @@ export function activate(context: vscode.ExtensionContext) {
 
   // The optional argument is the status bar item's trigger; the controller
   // re-validates it against the closed catalog.
-  const showGraphCommand = vscode.commands.registerCommand('speedyGit.showGraph', (trigger?: unknown) => {
+  const showGraphCommand = vscode.commands.registerCommand('multiRepoGraph.showGraph', (trigger?: unknown) => {
     controller?.showGraph(trigger);
   });
 
-  const openNewGraphTabCommand = vscode.commands.registerCommand('speedyGit.openNewGraphTab', () => {
+  const openNewGraphTabCommand = vscode.commands.registerCommand('multiRepoGraph.openNewGraphTab', () => {
     controller?.openNewGraphTab('commandPalette');
   });
 
   const openForRepoCommand = vscode.commands.registerCommand(
-    'speedyGit.openForRepo',
+    'multiRepoGraph.openForRepo',
     (sourceControl: vscode.SourceControl) => {
       controller?.openForRepo(sourceControl);
     }

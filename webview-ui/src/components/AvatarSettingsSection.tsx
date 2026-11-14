@@ -90,7 +90,7 @@ export function AvatarSettingsSection() {
           className={`${buttonPrimaryClassName} text-xs`}
           title={
             authState.authorized
-              ? 'Speedy Git is already authorized to look up avatars'
+              ? 'Multi-Repo Git Graph is already authorized to look up avatars'
               : 'Sign in to GitHub so avatars can be looked up at the higher rate limit'
           }
         >
@@ -158,11 +158,11 @@ function UnauthorizedDescription() {
       <p>Clicking the button below will:</p>
       <ul className="ml-4 list-disc space-y-0.5">
         <li>Open GitHub in your browser</li>
-        <li>Ask you to allow Speedy Git access</li>
+        <li>Ask you to allow Multi-Repo Git Graph access</li>
         <li>Return you to VS Code</li>
       </ul>
       <p>
-        Used <strong>only</strong> to fetch author avatars. Speedy Git never reads, changes, or sends
+        Used <strong>only</strong> to fetch author avatars. Multi-Repo Git Graph never reads, changes, or sends
         your code. Private repository access is requested so avatars also work in private repos.
       </p>
     </div>
@@ -176,7 +176,7 @@ function ConnectedDescription({ accountLabel }: { accountLabel: string | null })
         ✓ Connected{accountLabel ? ` as ${accountLabel}` : ''} — 5,000 lookups/hour.
       </p>
       <p>
-        “Remove token” makes Speedy Git stop using your GitHub sign-in. To fully revoke access, use
+        “Remove token” makes Multi-Repo Git Graph stop using your GitHub sign-in. To fully revoke access, use
         VS Code’s Accounts menu.
       </p>
     </div>

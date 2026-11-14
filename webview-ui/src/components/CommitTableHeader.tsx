@@ -44,8 +44,8 @@ const COLUMN_LABELS: Record<CommitTableColumnId, string> = {
   signature: 'Sig',
 };
 
-/** Deep-links VS Code settings to the Speedy Git date-format settings. */
-const DATE_FORMAT_SETTINGS_QUERY = '@id:speedyGit.dateFormat,speedyGit.dateFormatCustom';
+/** Deep-links VS Code settings to the Multi-Repo Git Graph date-format settings. */
+const DATE_FORMAT_SETTINGS_QUERY = '@id:multiRepoGraph.dateFormat,multiRepoGraph.dateFormatCustom';
 
 /** Small icon button shown next to a column label in the table header. */
 function HeaderIconButton({

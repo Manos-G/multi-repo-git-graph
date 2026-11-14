@@ -15,4 +15,4 @@ export function isUnregisteredSettingError(error: unknown): boolean {
 }
 
 export const UNREGISTERED_SETTING_MESSAGE =
-  'VS Code has not loaded the settings of the updated Speedy Git yet. Reload the window, then try again.';
+  'VS Code has not loaded the settings of the updated Multi-Repo Git Graph yet. Reload the window, then try again.';

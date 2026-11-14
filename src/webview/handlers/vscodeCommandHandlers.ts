@@ -3,11 +3,11 @@ import { isHttpUrl } from '../../../shared/autolinks.js';
 import { normalizeWorktreeFolderNameStyle, WORKTREE_STYLE_LABELS } from '../../../shared/types.js';
 import type { RequestHandlerMap } from '../WebviewMessageRouter.js';
 import { writeSettingOrToast } from './settingWriteReplies.js';
-import { updateSpeedyGitSetting, updateSpeedyGitSettingInDefinedScope } from './updateSpeedyGitSetting.js';
+import { updateMultiRepoGraphSetting, updateMultiRepoGraphSettingInDefinedScope } from './updateMultiRepoGraphSetting.js';
 
 export const vscodeCommandHandlers = {
   openSettings: async (message) => {
-    const query = message.payload.query ?? 'speedyGit';
+    const query = message.payload.query ?? 'multiRepoGraph';
     await vscode.commands.executeCommand('workbench.action.openSettings', query);
   },
 
@@ -20,7 +20,7 @@ export const vscodeCommandHandlers = {
 
   setToolbarSetting: async (message) => {
     const { setting, value } = message.payload;
-    await updateSpeedyGitSetting(`toolbar.${setting}`, value);
+    await updateMultiRepoGraphSetting(`toolbar.${setting}`, value);
   },
 
   /**
@@ -34,7 +34,7 @@ export const vscodeCommandHandlers = {
   setWorktreeFolderNameStyle: async (message, context) => {
     const style = normalizeWorktreeFolderNameStyle(message.payload.style);
     const saved = await writeSettingOrToast(context, 'the default worktree folder style', () =>
-      updateSpeedyGitSettingInDefinedScope('worktree.folderNameStyle', style),
+      updateMultiRepoGraphSettingInDefinedScope('worktree.folderNameStyle', style),
     );
     if (saved) {
       context.postMessage({

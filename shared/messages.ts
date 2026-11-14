@@ -165,7 +165,7 @@ export type RequestMessage =
    */
   | { type: 'requestGitHubAuth'; payload: Record<string, never> }
   /**
-   * User clicked "Remove token": Speedy Git stops using the GitHub session and
+   * User clicked "Remove token": Multi-Repo Git Graph stops using the GitHub session and
    * reverts to unauthenticated lookups. VS Code exposes no API for an extension
    * to revoke its own grant, so the underlying session is left to the Accounts
    * menu — only our opt-in is cleared.
@@ -190,7 +190,7 @@ export type RequestMessage =
    */
   | { type: 'displayRepo'; payload: { repoPath: string } }
   | { type: 'getSettings'; payload: Record<string, never> }
-  /** Persist a `speedyGit.toolbar.*` boolean setting from the webview (toolbar right-click menu). */
+  /** Persist a `multiRepoGraph.toolbar.*` boolean setting from the webview (toolbar right-click menu). */
   | { type: 'setToolbarSetting'; payload: { setting: ToolbarBooleanSetting; value: boolean } }
   | { type: 'setWorktreeFolderNameStyle'; payload: { style: WorktreeFolderNameStyle } }
   /**
@@ -361,7 +361,7 @@ export type ResponseMessage =
   | { type: 'compareResult'; payload: { requestId: string; result: CompareResult } }
   | { type: 'compareError'; payload: { requestId: string; error: GitError | { message: string } } }
   /**
-   * Another Speedy Git view on THIS working tree is running a git operation.
+   * Another Multi-Repo Git Graph view on THIS working tree is running a git operation.
    * A notice only — it never disables a control. See `RepoActivityRegistry`.
    */
   | { type: 'peerActivity'; payload: { busy: boolean } };

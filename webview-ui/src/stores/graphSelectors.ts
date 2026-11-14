@@ -70,7 +70,7 @@ export function useCurrentLocalBranch(): Branch | null {
  *
  * For badges shown *outside* the graph — the legend, release notes — where a
  * sample should look like something the user has already seen on screen. Read
- * from the palette setting rather than hardcoded, since `speedyGit.graphColors`
+ * from the palette setting rather than hardcoded, since `multiRepoGraph.graphColors`
  * is the user's to change; lane 0 is simply the first column's color.
  */
 export function useFirstLaneBadgeStyle(): { laneColor: string; laneColorStyle: CSSProperties } {

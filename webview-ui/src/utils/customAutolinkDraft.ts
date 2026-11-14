@@ -9,7 +9,7 @@ import {
 } from '@shared/autolinks';
 
 /**
- * The View settings dialog's editable copy of `speedyGit.autolinks.custom`.
+ * The View settings dialog's editable copy of `multiRepoGraph.autolinks.custom`.
  *
  * Rows carry a stable id so React keeps each input's focus while rows above it
  * are added or removed. An entry keeps the options it arrived with

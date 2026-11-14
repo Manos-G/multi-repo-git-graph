@@ -42,7 +42,7 @@ export class WebviewPanelHost {
     if (this.panel) return;
 
     this.panel = vscode.window.createWebviewPanel(
-      'speedyGit',
+      'multiRepoGraph',
       options.title,
       options.viewColumn,
       {
@@ -57,7 +57,7 @@ export class WebviewPanelHost {
     this.panel.iconPath = vscode.Uri.joinPath(
       this.context.extensionUri,
       'resources',
-      'speedy-git-ext-icon-128.png',
+      'multi-repo-git-graph-icon-128.png',
     );
 
     this.panel.webview.html = this.getWebviewContent(this.panel.webview);
@@ -129,7 +129,7 @@ export class WebviewPanelHost {
     );
     const nonce = getNonce();
 
-    this.log.debug('Generated Speedy Git webview HTML');
+    this.log.debug('Generated Multi-Repo Git Graph webview HTML');
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -138,7 +138,7 @@ export class WebviewPanelHost {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src data: https://www.gravatar.com https://secure.gravatar.com https://avatars.githubusercontent.com;">
   <link rel="stylesheet" href="${styleUri}">
-  <title>Speedy Git</title>
+  <title>Multi-Repo Git Graph</title>
 </head>
 <body>
   <div id="root"></div>

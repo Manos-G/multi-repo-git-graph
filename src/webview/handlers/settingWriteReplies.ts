@@ -5,7 +5,7 @@ import type { WebviewRequestContext } from '../WebviewRequestContext.js';
  * How a settings handler reports a write. The new value itself always arrives
  * as the `settingsData` broadcast; these only report whether the write worked.
  *
- * `write` is the write itself (`updateSpeedyGitSetting…`), so the caller still
+ * `write` is the write itself (`updateMultiRepoGraphSetting…`), so the caller still
  * chooses the scope.
  */
 

@@ -10,7 +10,7 @@ import {
 } from './avatarCachePolicy.js';
 
 /** Bumped only when the record shape changes; old data is then ignored. */
-const CACHE_KEY = 'speedyGit.avatarCache.v2';
+const CACHE_KEY = 'multiRepoGraph.avatarCache.v2';
 
 /**
  * Writes are batched behind this delay. The queue resolves at most one avatar
