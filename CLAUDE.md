@@ -1,6 +1,24 @@
-# CLAUDE.md / AGENTS.md
+# Multi-Repo Git Graph — CLAUDE.md / AGENTS.md
 
-Agent instructions for this repository. `CLAUDE.md` and `AGENTS.md` are hard links to one file — Claude Code reads `CLAUDE.md`, other agents read `AGENTS.md`. `AGENTS.md` is gitignored; after cloning run `ln CLAUDE.md AGENTS.md` (bash) or the `New-Item -ItemType HardLink` equivalent (PowerShell).
+Agent instructions for this repository. `CLAUDE.md` and `AGENTS.md` are hard links to one file — Claude Code reads `CLAUDE.md`, other agents read `AGENTS.md`. `AGENTS.md` is gitignored; after cloning run `ln CLAUDE.md AGENTS.md` (bash) or the `New-Item -ItemType HardLink` equivalent (PowerShell). An editor that saves by replacing the file breaks the link; run `ln -f CLAUDE.md AGENTS.md` (`AGENTS.create.sh`) again after editing.
+
+**Multi-Repo Git Graph** is a fork of [Speedy Git](https://github.com/onlineeric/speedy-git-ext) (MIT, Eric Cheng), maintained at <https://github.com/Manos-G/multi-repo-git-graph>. It keeps every Speedy Git feature and adds the **Changed Repos** panel (see below). The fork's own differences are deliberately small, so upstream changes keep merging:
+
+- every ID, command and setting uses the prefix `multiRepoGraph` instead of `speedyGit`;
+- telemetry is always off (`src/extension.ts` passes an empty connection string to `createTelemetryService`);
+- the upstream What's New popup never opens on its own (`FORK_DISABLE_WHATS_NEW_POPUP` in `src/webview/GraphTab.ts`);
+- the new files under `src/changedRepos/`, `resources/changed-repos/`, `resources/codicons/` and `resources/views/`.
+
+### Merging upstream changes
+
+```bash
+git remote add upstream https://github.com/onlineeric/speedy-git-ext.git   # once (gh repo clone adds it for you)
+git fetch upstream
+git checkout -b upstream-sync origin/main
+git merge upstream/main
+```
+
+Then resolve the conflicts. Most come from the rename: new or changed upstream code says `speedyGit` (command IDs, setting keys, view IDs, `package.json` contributions, tests) and must say `multiRepoGraph`. After resolving, search for leftovers with `git grep -n speedyGit -- ':!CHANGELOG.md'`. The ones to keep are text that names the original project, and the internal `SPEEDY_*` environment variables in `gitEditorScripts.ts`, which no user sees. Keep the fork's telemetry and What's New overrides. Run `pnpm lint && pnpm typecheck && pnpm test`, then open a pull request to `main`. Never merge it yourself.
 
 ## Build & Development Commands
 
@@ -16,8 +34,10 @@ pnpm test               # Run unit tests (Vitest, run mode)
 pnpm generate-test-repo # Generate deterministic test repo (see "Test Repository Location" below)
 pnpm generate-submodule-repos # Generate test repos with submodules
 pnpm ext:package        # Create .vsix package
-pnpm ext:publish        # Publish to VS Code Marketplace (vsce) + Open VSX (ovsx)
+pnpm ext:publish        # Upstream's manual publish script — the fork releases from CI instead
 ```
+
+Releases are made by `.github/workflows/release.yml` when a `v*.*.*` tag is pushed (VS Code Marketplace through Trusted Publishing, Open VSX, GitHub Release). The steps are in `RELEASING.md`. Never publish from a local session.
 
 ### Test Repository Location
 
@@ -58,8 +78,9 @@ VS Code extension with **backend** (Node.js extension host) and **frontend** (Re
 | Path | Role |
 | --- | --- |
 | `src/` | Backend — esbuild → `dist/extension.js` (CJS, node18) |
-| `src/services/` | One `Git<Domain>Service` per git area; all repo-bound, all returning `Result<T, GitError>`. `GitExecutor` is the only place git is actually spawned (one timeout for every command, `speedyGit.git.timeoutSeconds` via `services/gitCommandTimeout.ts` — no per-call overrides, 0 = none — and a no-op `GIT_EDITOR` by default, so no command can hang waiting on an editor — pass `env` to override where a real one is needed) |
+| `src/services/` | One `Git<Domain>Service` per git area; all repo-bound, all returning `Result<T, GitError>`. `GitExecutor` is the only place git is actually spawned (one timeout for every command, `multiRepoGraph.git.timeoutSeconds` via `services/gitCommandTimeout.ts` — no per-call overrides, 0 = none — and a no-op `GIT_EDITOR` by default, so no command can hang waiting on an editor — pass `env` to override where a real one is needed) |
 | `src/webview/` | Backend webview subsystem (see below) |
+| `src/changedRepos/` + `resources/changed-repos/` | Fork: the Changed Repos panel (see *Changed Repos panel*) — separate from the graph webview |
 | `webview-ui/src/` | Frontend — Vite + React → `dist/webview/` |
 | `shared/` | Types shared across the boundary: `types.ts`, `messages.ts` (RPC unions), `errors.ts` (`Result`/`GitError`), `gitRefValidation.ts`, `telemetry.ts` |
 
@@ -110,11 +131,11 @@ Rules:
 - **Handlers must stay stateless about repos**: resolve git services via `context.services` (the `GitServiceRegistry`) *at request time*. Never capture a service instance at construction — repo switching and submodule navigation atomically replace the registry, so captured references go stale.
 - **Don't pass the provider to handlers**: give them only what they need through `WebviewRequestContext`.
 - **State ownership**: table layout is per-repo; other UI state is global.
-- **A message posted when a panel opens can be lost.** VS Code hands queued messages to the page on its `load` event (or a 200 ms fallback), which can beat the webview's listener. The listener is therefore registered in `index.tsx` *before* the first render — never move it back into an effect — and anything the webview cannot work without must arrive with or after `initialData`: `sendInitialData` re-sends `persistedUIState`/`settingsData` every load, and `GraphTab` re-sends `repoList` through the loader's one-time `beforeFirstInitialData` hook (#221; a repo-keyed feature with no `displayedRepoPath` silently does nothing). Only that once — a later re-send can carry a repo the user has since switched away from. `whatsNew` is still posted only at open, so on a busy startup the dialog can be missed until the next session; re-sending it would risk reopening a dialog just closed.
+- **A message posted when a panel opens can be lost.** VS Code hands queued messages to the page on its `load` event (or a 200 ms fallback), which can beat the webview's listener. The listener is therefore registered in `index.tsx` *before* the first render — never move it back into an effect — and anything the webview cannot work without must arrive with or after `initialData`: `sendInitialData` re-sends `persistedUIState`/`settingsData` every load, and `GraphTab` re-sends `repoList` through the loader's one-time `beforeFirstInitialData` hook (#221; a repo-keyed feature with no `displayedRepoPath` silently does nothing). Only that once — a later re-send can carry a repo the user has since switched away from. `whatsNew` is still posted only at open, so on a busy startup the dialog can be missed until the next session; re-sending it would risk reopening a dialog just closed. (In this fork the automatic popup is disabled anyway, see *What's New in the fork*.)
 
 ### Multiple Graph Tabs — One Tab Owns a View
 
-Speedy Git opens any number of graphs, each its own native editor tab. The split is by **what must exist once**:
+The extension opens any number of graphs, each its own native editor tab (the Changed Repos panel's Git Graph button relies on this: one tab per repository). The split is by **what must exist once**:
 
 - **`GraphTab` owns everything view-scoped** — repository and submodule navigation, filters, search, selection, compare, layout, scroll, its `GitServiceRegistry`, its `PersistedUIStateStore`, its watcher subscription. Changing any of it in one tab must never change another, including another tab on the same repository.
 - **`ExtensionServices` owns everything that must be single** — repo discovery, telemetry, the avatar cache/auth/service/queue (the rate-limit budget belongs to an identity, not a panel), `WhatsNewStore` plus the "first graph of this session" flag, `GitRepoIdentityService`, `GitWatcherHub`, `RepoActivityRegistry`, and the `git-show:` diff-service map. Creating it per tab is the bug this structure exists to prevent.
@@ -137,7 +158,7 @@ These exist because the rule they encode is subtle or shared across several call
 - `utils/refBadgeContent.ts` — a ref badge's label, icons and tooltip. **The two branch glyphs are a system**: the fork means "exists locally", the cloud means "exists on a remote", so a branch that is both leads with the union (`⑂☁ main`) and the scheme is legible without hovering. Both glyphs *lead*, which keeps the cloud on the same side of the name in every badge and leaves the trailing slot to the worktree icon alone. Remote *names* live only in the tooltip; 2+ remotes add a count to the cloud (`⑂☁2 main`), because a badge should spend row width only on what can't be inferred. Adding a cloud that means anything else breaks the encoding. It also owns `hiddenSearchTexts` — text a badge can *match* on but does not render (a merged branch's qualified `origin/name`) — so the search matcher, the highlighter and `RefLabel` all read one answer to "what does this badge show, and what does it hide?"; a second `switch` over `DisplayRef` is how a row lights up with nothing boxed
 - `utils/searchQuery.ts` / `utils/searchFilter.ts` / `utils/searchHighlight.ts` — **the search query is not one literal string.** It splits on whitespace into terms that are AND-ed, a `"quoted run"` being one literal term, and each rule is evaluated *per term*: in `fix a1b2c3d` only `a1b2c3d` is hash-eligible, because the 4-character hash floor (git's own, so `add`/`beef` can't light up unrelated rows) belongs to the term rather than the query. An **unterminated quote is literal from the quote onward**, so results don't flash between meanings mid-keystroke, and `:` is reserved so field qualifiers (`author:john`) can land later without changing what a literal term means. `parseSearchQuery` allocates, so it is called **once per recompute** in `SearchWidget` and the result is stored in `graphStore.searchTerms` — a fresh array per render would defeat `CommitTableRow`'s memo for every row on screen. Matching and highlighting must be driven by that one term list: `matchIndices` and `searchTerms` are written in a single `set` call so the panel's "N of M" and the rows' boxes can never describe different queries
 - `utils/mergeRefs.ts`'s `filterDisplayRefsBySettings` — **the single source of truth for which ref badges a row shows.** The renderer and the search matcher both call it, which is what makes "only a badge you can see can match" true by construction rather than by two copies of one rule agreeing. It *degrades* a merged branch to a local one when remote branches are hidden rather than dropping it, so `main` still matches while `origin/main` stops. Its third consumer is `isBadgedCommit` (same file), which decides what the Filter panel's "Always show badged commits" keeps visible (into `filterKeptCommitHashes`, the set it shares with revealed commits) — so a hidden tag or remote branch never rescues a commit
-- `utils/autolinks.ts` + `utils/remoteAutolinkTarget.ts` + `shared/autolinks.ts` — **a commit message links a reference only when the link is certainly right.** Custom rules (`speedyGit.autolinks.custom`, GitLens's `gitlens.autolinks` shape) and GitHub/GitLab rules feed one rule list, which the row and the details panel render through `renderInlineCode`'s `autolinks` option and the tooltip lists through `listMessageAutolinks` (same non-code segments, so `#12` in backticks links nowhere) — never match references a second way. Remote rules exist only for `github.com`/`gitlab.com`, against the sole remote, else `upstream`, else `origin`; anything else links nothing, and the chosen remote is never swapped for another supported one. They link exactly what the provider's own page links (GitHub `#N`/`GH-N`/`owner/repo#N` → `/issues/N`, which redirects for a PR; GitLab `#N` issue, `!N` merge request). Read rules with `useAutolinkRules()`, which returns one array per input identity so row memos hold. `openExternal` opens only http(s), so a user-configured URL can't reach `command:`/`file:`
+- `utils/autolinks.ts` + `utils/remoteAutolinkTarget.ts` + `shared/autolinks.ts` — **a commit message links a reference only when the link is certainly right.** Custom rules (`multiRepoGraph.autolinks.custom`, GitLens's `gitlens.autolinks` shape) and GitHub/GitLab rules feed one rule list, which the row and the details panel render through `renderInlineCode`'s `autolinks` option and the tooltip lists through `listMessageAutolinks` (same non-code segments, so `#12` in backticks links nowhere) — never match references a second way. Remote rules exist only for `github.com`/`gitlab.com`, against the sole remote, else `upstream`, else `origin`; anything else links nothing, and the chosen remote is never swapped for another supported one. They link exactly what the provider's own page links (GitHub `#N`/`GH-N`/`owner/repo#N` → `/issues/N`, which redirects for a PR; GitLab `#N` issue, `!N` merge request). Read rules with `useAutolinkRules()`, which returns one array per input identity so row memos hold. `openExternal` opens only http(s), so a user-configured URL can't reach `command:`/`file:`
 - `utils/commitRefs.ts` — identify a row by its ref decorations (`findHeadCommit`, `isStashPseudoCommit`); used by topology, the uncommitted node's parent, the tooltip and Go to HEAD
 - `utils/headNavigation.ts` — pure "Go to HEAD" decision logic + its toast messages, covering **both halves**: `decideHeadNavigation` for the `locateHead` answer and `decideHeadContinuation` for each follow-up batch (including the attempt cap). Both return the same decision kinds, so `rpcClient` executes them through one function — a rule added to only one half puts the two back out of step. The details panel's "Go to parent/child commit" is the **same state machine with a known hash** (`rpcClient.goToRelatedCommit`, `locateHead`'s `targetHash`); only the toast wording differs, via `COMMIT_NAVIGATION_MESSAGES[navigationTarget]`. Don't build a second navigation flow. **Every navigation lands, whatever the filters** (GH #214): a target hidden by the Author/Message filter is **revealed** (`graphStore.revealedCommitHashes`, shown dimmed), one outside the backend-filtered stream (Date filter; Branch filter for HEAD) is **fetched** alone by hash (`getCommitsByHash` → `revealedExtraCommits`, merged in by `utils/revealedCommits.ts`, never into `commits`). Don't re-add a "hidden by filter" dead-end toast. Never fetch alone a commit that *is* in the stream but unloaded — that is `loadMore`'s job. Reveals are cleared by any filter change (`setFilters`/`resetAllFilters`) and kept across refresh. The remaining "can't be shown" toasts are one reason-free sentence per target
 - `utils/commitReachability.ts` — branch reachability; checkers cached by commit-list identity (WeakMap)
@@ -244,7 +265,7 @@ others — unreadable on light themes, off-brand on high-contrast ones.
 - **Legitimate exceptions** must be marked in place with a `theme-color-exception:` comment naming
   the reason — on the line, or in the comment block above it. The bar is a color that has to contrast
   against a *user-configured* value rather than the theme: the graph lane palette
-  (`speedyGit.graphColors`), `colorUtils.ts`'s luminance-picked label color, `worktreeBadgeStyle.ts`'s
+  (`multiRepoGraph.graphColors`), `colorUtils.ts`'s luminance-picked label color, `worktreeBadgeStyle.ts`'s
   border, `gravatar.ts`'s generated `hsl()` and the white initials on it. Shadows and the `bg-black/50`
   dialog scrim are theme-independent by nature and need no marker.
 
@@ -265,7 +286,7 @@ Menu/dialog composition:
 - `components/ToolbarIconButton.tsx` — `TOGGLE_BUTTON_TONES` (`inactive`/`active`/`attention`), spread onto a toolbar button or a toolbar popover's trigger. Spread, not `className=`: the color is an inline style and only the hover state is a class
 - `components/CompareMenuItems.tsx`, `MenuCopySubmenu.tsx`, `MenuGroupSeparator.tsx`, `MenuSubTrigger.tsx` — shared menu fragments
 - `components/RefBadgeLegend.tsx` + `utils/refBadgeLegend.ts` — the "Badge Legend" section. Needs no props and no dialog context, so any dialog drops it in as `<RefBadgeLegend />`. Samples render through the real `RefLabel` in the graph's own lane-0 color, so the legend explains the badges the graph draws rather than a picture of them; a test asserts every `DisplayRef` type has a row
-- `components/whatsNewEntries.tsx` — **release notes are added here and nowhere else.** One entry per version. Every entry stays browsable: the dialog's footer arrows step through them all (sorted by version, not file order), and the toolbar's News button opens the newest one with no countdown. "Seen" is recorded per *entry*, and a patch with no entry of its own shows its series' latest notes at or below it (`shared/whatsNew.ts`'s `resolveWhatsNewEntry`) — so 5.18.1 shows 5.18.0's notes to someone arriving from 5.17, and nothing to someone who already saw them. A patch *with* its own entry (5.10.1) shows once like any release. A minor series with no entry shows no dialog, which is how a release opts out. Content is a `ReactNode`, so an entry can embed live UI (5.10.0 embeds `RefBadgeLegend`) rather than describing it. Its look is governed by the design requirements below. **Never add, change or skip an entry on your own judgement.** The maintainer runs this: before a release they start a What's New pass with you and decide, item by item, what goes in and whether the dialog shows at all. Your job is to ask, not to decide — clarify every time, and a reminder that the pass is due is welcome. Not raising it is also fine; they initiate it themselves. A test therefore cannot require an entry for the shipping version; it instead asserts every entry's version is an exact `N.N.N` string, which is what catches the typo that would otherwise mean no dialog ever.
+- `components/whatsNewEntries.tsx` — upstream's release notes. **In this fork, do not add entries here.** See *What's New in the fork* below. The rest of this bullet describes upstream's process, kept so that upstream merges into this file stay readable. One entry per version. Every entry stays browsable: the dialog's footer arrows step through them all (sorted by version, not file order), and the toolbar's News button opens the newest one with no countdown. "Seen" is recorded per *entry*, and a patch with no entry of its own shows its series' latest notes at or below it (`shared/whatsNew.ts`'s `resolveWhatsNewEntry`) — so 5.18.1 shows 5.18.0's notes to someone arriving from 5.17, and nothing to someone who already saw them. A patch *with* its own entry (5.10.1) shows once like any release. A minor series with no entry shows no dialog, which is how a release opts out. Content is a `ReactNode`, so an entry can embed live UI (5.10.0 embeds `RefBadgeLegend`) rather than describing it. Its look is governed by the design requirements below. **Never add, change or skip an entry on your own judgement.** The maintainer runs this: before a release they start a What's New pass with you and decide, item by item, what goes in and whether the dialog shows at all. Your job is to ask, not to decide — clarify every time, and a reminder that the pass is due is welcome. Not raising it is also fine; they initiate it themselves. A test therefore cannot require an entry for the shipping version; it instead asserts every entry's version is an exact `N.N.N` string, which is what catches the typo that would otherwise mean no dialog ever.
 
   **What's New Design requirements — the 5.16.0 entry is the reference implementation; match it.** The dialog advertises a feature, so it must look like a poster, not a wall of text a user reflexively closes:
 
@@ -290,17 +311,55 @@ Menu/dialog composition:
 - `hooks/useCommitHookWait.ts` + `components/CommitHookWait.tsx` — the running → "waiting on hooks" phase, its notice and the Cancel / "Cancel wait" button for any dialog that writes a commit (amend, fixup). The button sends the one `cancelCommitWait` RPC itself; the backend's matching half is one `WebviewRuntime.activeCommitController`, held by `commitHandlers`' shared cancellable runner
 - `hooks/useCopyFeedback.ts` — `copyToClipboard` + short "copied" flash, used by every copy button
 
-### Telemetry Requirements
+### What's New in the fork
 
-- **Every new or enhanced feature must include a telemetry review and applicable instrumentation.** Track user-initiated Git operations, branch-badge double-click checkout, and the approved UI surfaces: context-menu items, toolbar buttons, dialog outcomes, panel toggles, and column visibility changes. Do not track chatty/background interactions such as loading, scrolling, hovering, typing, or auto-refresh.
-- **Allowed data**: fixed feature/action identifiers, success/error outcomes, standardized error codes, durations, dialog outcomes, reviewed boolean/enum settings, editor/OS/extension versions, simple counts, and coarse buckets for content-derived magnitudes such as commit counts.
-- **Never collect**: repository/workspace names or paths, remote URLs, branch/tag/stash/worktree names, commit hashes/messages/diffs, author details, Git configuration, file names/paths, raw Git output, exception messages/stacks, search/filter values, or anything entered by the user. Hashing or encoding this data is still forbidden.
-- Use only the closed catalogs and existing telemetry helpers in `shared/telemetry.ts`; never send free-form values. Keep telemetry fire-and-forget, consent-gated, and failure-isolated. Update `telemetry.json` and focused tests when telemetry coverage changes.
+The upstream What's New popup is disabled in this fork (`FORK_DISABLE_WHATS_NEW_POPUP` in `src/webview/GraphTab.ts`). The toolbar's News button still shows upstream's notes. New fork features are described in `CHANGELOG.md` (fork section at the top) and `README.md`, **not** in `whatsNewEntries.tsx`.
+
+### Telemetry
+
+This fork never sends telemetry. Do not add telemetry calls. The upstream telemetry code stays only to keep upstream merges easy.
+
+(The mentions of telemetry above, such as the router middleware, `trackUiEvent` and `useDialogTelemetry`, describe that upstream code. Each call ends in the no-op service created in `src/extension.ts`. Never pass it a connection string, and do not instrument fork code such as the Changed Repos panel.)
+
+### Changed Repos panel
+
+The fork's main feature: a view in its own Activity Bar container (`multiRepoGraph`) that looks and works like Source Control but lists only repositories that need attention (changed files, or with the settings `multiRepoGraph.changedRepos.include*`, commits to push or pull, or a branch with no upstream). It is entirely separate from the React graph webview: it shares no store, no RPC types and no `GitExecutor`.
+
+| File | Role |
+| --- | --- |
+| `src/changedRepos/ChangedReposView.ts` | `registerChangedReposView()` (called from `src/extension.ts`): gets the `vscode.git` API, registers the `WebviewViewProvider` (`multiRepoGraph.changedRepos`, `retainContextWhenHidden`), the status bar item, all `multiRepoGraph.changedRepos.*` commands, and a 200 ms debounced redraw on every repository's `state.onDidChange`. `ChangedReposPanel` builds the HTML/CSP, turns each repository into a plain `RepoState`, and runs every action (commit, smart commit, stage/unstage/discard, push/publish/sync/pull/fetch, open diff) with a progress bar and Source-Control-style error messages |
+| `src/changedRepos/repoState.ts` | Pure helpers with no `vscode` runtime import (`statusInfo`, `needsAttention`, `fileCount`, `branchLabel`, `repoState`, `groupChanges`), unit-tested in `src/changedRepos/__tests__/` |
+| `src/changedRepos/gitApi.ts` | Hand-written types for the part of the `vscode.git` API v1 the panel uses, and `GitStatus` as plain constants (esbuild does not inline `const enum`) |
+| `resources/changed-repos/view.js` | The page: draws the state and sends user actions back. Shipped as is |
+| `resources/changed-repos/view.css` | Source Control look (row heights, hover actions, status letter colors), all through theme tokens |
+| `resources/codicons/` | Third-party Microsoft Codicons font + CSS (see licence note below) |
+| `resources/views/changed-repos.svg` | Activity Bar icon |
+
+**Why plain JavaScript, no React, no build step.** The panel must look like Source Control, and it must keep each repository's message box text, focus and cursor between updates, which come several times a second while you type or git runs. `view.js` therefore keeps **one DOM section per repository** (a `Map` keyed by repo path) and updates it in place. It never rebuilds a message box, and it writes a box's value only when the box is not focused. A small file that `vsce` ships directly also keeps the panel independent of the graph's Vite bundle, which matters for upstream merges. Keep it dependency-free: no framework, no bundler, no `import`.
+
+**Message protocol** (`postMessage` both ways, no shared types, so keep both sides in step by hand):
+
+- page → extension: `ready` (sent once on load; answered with the state), `showAll`, `fetchAll`, `setMessage {repo, value}` (debounced 250 ms; writes `repo.inputBox.value`, so the draft is shared with Source Control), `commit {repo, message}` (button or Ctrl+Enter), `commitMenu {repo, message}`, `repoAction {repo, action}`, `groupAction {repo, group, action}`, `fileAction {repo, group, file, action}` (a click on a file row is `action: 'open'`).
+- extension → page: `state {state: ViewState}` (the whole list, after every debounced change, on `ready` and when the view becomes visible), `committed {repo}` (clear that message box).
+
+Repositories, groups and files are always identified by **absolute paths**, never by index, because the list changes between a click and its handling.
+
+**Git goes through `vscode.git`, not `GitExecutor`.** Stage (`add`), unstage (`revert`), discard (`clean`), commit, push, pull and fetch are the built-in Git extension's own calls, so they behave exactly like Source Control: same hooks, same credential prompts, same message box, same refresh. Diffs open with the same sides as Source Control:
+
+- staged change: `toGitUri(originalUri, 'HEAD')` ↔ `toGitUri(uri, '')` (HEAD ↔ index);
+- unstaged change: `toGitUri(originalUri, '~')` ↔ the file on disk (index ↔ working tree);
+- added / untracked / deleted files open a single side, and merge conflicts open the file itself.
+
+Do not swap in `GitExecutor` or `git-show:` URIs here. The panel's promise is that it is Source Control.
+
+**Colors and menus.** Every color in `view.css` comes from a `var(--vscode-*)` token, the same rule as the graph webview (a fallback inside `var(…, fallback)` is allowed). Icons are codicons, never images. Right-click menus are native VS Code menus: each row carries a `data-vscode-context` JSON (`webviewSection`: `repo` / `group` / `file-<group>`, plus `repoPath`, `group`, `filePath`, and `preventDefaultContextMenuItems`), and the items are declared under `contributes.menus["webview/context"]` in `package.json` with `when: webviewId == 'multiRepoGraph.changedRepos' && webviewSection == '…'`. A new menu item = a command in `registerChangedReposView` + a `commands` entry + a `webview/context` entry (hide it from the Command Palette with `commandPalette` `when: false`).
+
+**Third-party: `resources/codicons/`** is Microsoft's Codicons (font under CC BY 4.0, code under MIT). Its `LICENSE-CC-BY-4.0`, `LICENSE-CODE-MIT` and `README.txt` must stay next to the font and ship in the `.vsix`. When updating the font, replace the files together and keep the attribution.
 
 ### Performance Design
 
 - Virtual scrolling: 28px rows, configurable overscan (default 50, range 0-200)
-- Batch prefetch: 500 commits default (configurable via `speedyGit.batchCommitSize`)
+- Batch prefetch: 500 commits default (configurable via `multiRepoGraph.batchCommitSize`)
 - Graph topology pre-computed once; passing lanes stored for O(1) render lookup
 - `CommitTableRow` memoized to prevent unnecessary re-renders
 
@@ -311,8 +370,8 @@ Menu/dialog composition:
 - Graph topology computed in webview, not backend
 - TypeScript **strict mode** with `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`
 - Uses **`Result<T, E>`** pattern instead of throwing exceptions in git operations
-- UI state persisted via VS Code `context.globalState`; application state is transient (Zustand, session-only). Persistent settings via VS Code config (e.g. `speedyGit.worktree.basePath`)
-- Telemetry is privacy-first and allowlist-only: fixed catalogs, backend-only transmission, dual consent, fire-and-forget, and no repository/user content
+- UI state persisted via VS Code `context.globalState`; application state is transient (Zustand, session-only). Persistent settings via VS Code config (e.g. `multiRepoGraph.worktree.basePath`)
+- **No telemetry**: this fork never sends any (see *Telemetry*)
 
 ## Tech Stack
 
@@ -322,19 +381,28 @@ Menu/dialog composition:
 - **@tanstack/react-virtual** — virtual scrolling
 - **@dnd-kit** — drag-and-drop (column reorder, interactive rebase)
 - **react-datepicker 9.x** + **date-fns 4.x** — date range filtering
-- **@vscode/extension-telemetry** — consent-aware transport to Azure Application Insights
+- **@vscode/extension-telemetry** — upstream's transport; kept as a dependency for easy merges, never given a connection string in this fork
+- **Changed Repos panel** — plain HTML/CSS/JS + Microsoft Codicons, and the built-in `vscode.git` extension API
 - **Vitest** — unit testing; tests live in `__tests__/` beside the code they cover
 
 ## Restrictions
 
-- **Packages**: NEVER auto-install; provide install commands for me to run manually
-- **Git**: NEVER commit or merge; only readonly operations (`git log`, `git status`, `git diff`) and create PR, create branch only if I ask you to do so, or if speckit workflow requires it.
-- **Claude Code cloud sessions are the exception to the Git rule above.** That rule is for local sessions on my machine. A cloud session (claude.ai/code — a fresh, ephemeral container) loses anything not pushed, so there you may create branches, commit and push to the session's working branch without asking. Still never merge, never force-push a shared branch, and never push to a branch other than the one the session was given unless I ask.
-  - **Commit identity in cloud sessions: I am the author, Claude is the committer.** Before the first commit, set it in the repo's local config:
-    ```bash
-    git config author.name  "Eric Cheng"
-    git config author.email "online.eric@gmail.com"
-    git config committer.name  "Claude"
-    git config committer.email "noreply@anthropic.com"
-    ```
-    The author email is what GitHub counts on my Contributions graph. The committer must stay Claude because the container signs commits with Claude's key — a signature only shows **Verified** when it matches the committer. Check with `git log -1 --format='%an <%ae> | %cn <%ce>'`. Local sessions need none of this: my own `user.name`/`user.email` cover both roles there.
+### Local sessions (on the maintainer's computer)
+
+- **Packages**: you may run `pnpm install` inside the repository (root and `webview-ui/`). Never install global tools or change global configuration. If one is missing, give the install command and wait.
+- **Git**: read-only operations (`git log`, `git status`, `git diff`, `git fetch`) are always fine. Create a feature branch, commit and push to it **only when asked**. Also create a branch when the speckit workflow (`.specify/`) needs one. **Never push to `main`, never force-push, never merge** (pull requests are merged by the maintainer).
+- **Identity**: use the git configuration already on the computer. Never set or change `user.name` / `user.email` or the author.
+- **Publishing**: never run `vsce publish` / `ovsx publish`. Releases come only from the tag workflow.
+
+### Cloud sessions (claude.ai/code)
+
+A cloud session runs in a fresh, ephemeral container and loses anything not pushed, so there you may commit and push to the **session's working branch** without asking. Never merge, never force-push, and never push to any other branch unless asked.
+
+Commit author: `Manos-G <80577824+Manos-G@users.noreply.github.com>`. Set it before the first commit:
+
+```bash
+git config user.name  "Manos-G"
+git config user.email "80577824+Manos-G@users.noreply.github.com"
+```
+
+Check with `git log -1 --format='%an <%ae> | %cn <%ce>'`. If the container signs commits with its own key and sets its own committer, keep that committer; only the author has to be Manos-G.
