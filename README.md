@@ -47,6 +47,37 @@ The panel uses the repository list of the built-in Git extension. If your reposi
 | `multiRepoGraph.changedRepos.confirmDiscard` | `true` | Ask before discarding changes. |
 | `multiRepoGraph.changedRepos.showStatusBar` | `true` | Show the number of changed repositories in the status bar. |
 
+## vcstool (.repos) workspaces
+
+For a ROS 2 workspace made with [vcstool](https://github.com/dirk-thomas/vcstool) (`vcs import < ros_ws.repos`), the extension reads the `.repos` file and always shows how the disk differs from it.
+
+- **Finds the file** — every `*.repos` file in the workspace folder and one folder below it, or the files in `multiRepoGraph.vcstool.files`. The paths in the file start in the folder given to `vcs import`; the extension picks it (the file's folder, its `src/`, or `ros_ws/src/` — whichever has most of the entries) and shows it. Change it with the ✏ button or `multiRepoGraph.vcstool.targetFolder`.
+- **Opens the repositories** in VS Code's Git support, so every listed repository is in Source Control, in the Changed Repos panel and in the graph lists — no `git.repositoryScanMaxDepth` needed.
+- **Drift** — a repository on another branch than the file says, on another commit than a pinned hash (with how many commits ahead or behind), or with another `origin` URL gets a ⚠ line in the panel, even when it has no changed files. The header sums it up: `ros_ws.repos · 26 repos · 2 drift · 1 missing`.
+- **Missing and extra** — a listed repository that is not on disk has a **Clone** button (clones the URL and checks out the version). A Git repository in the target folder that the file does not list has an **Add to File** button.
+- **Frozen repositories** — entries pinned to a commit hash (third-party libraries such as ruckig) are *frozen*: VS Code's Git support does not open them, so they cost no `git status` and no file watchers. The extension still reads the commit each one is on from its `.git` files (no git process) when the window gets focus and when you press **Check**, and lists them in a collapsed **Frozen** group with a ⚠ when one moved. Setting `multiRepoGraph.vcstool.freeze`: `"pinned"` (default), `"none"`, or a list of names.
+- **Lock Versions** writes the exact commit of every repository into the file, like `vcs export --exact`. It fetches first and refuses — naming the repositories — when a commit is not on the remote. Order, comments and quoting stay as they were; a replaced branch is kept as `# locked: <branch>`, so a locked repository is not frozen and **Unlock Versions** can write the branches back. Both then offer to commit only the `.repos` file with a message you can edit, for example "Lock versions for Match 1".
+- **Restore Versions** checks out every repository at the version in the file, or in an older commit of the file you pick from its history. It refuses when a repository has uncommitted changes and lists them.
+- **Match-Day Check** (☑ button) fetches and checks every repository, frozen ones included: uncommitted files, commits not pushed, unpublished branches, detached HEAD, drift, missing repositories, extra repositories and pinned commits that are not on the remote. It shows a green **Ready** or the problems, each with a button to fix or open it.
+
+### Recommended settings
+
+With a `.repos` file the extension opens the repositories itself, so VS Code's own scan is not needed, and it would also open the frozen ones. The **Apply…** button in the panel writes, after asking:
+
+```json
+{
+  "git.autoRepositoryDetection": false
+}
+```
+
+and removes `git.repositoryScanMaxDepth`. Reload the window afterwards.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `multiRepoGraph.vcstool.files` | `[]` | `.repos` files to read (relative to the workspace folder or absolute). Empty: find them automatically. |
+| `multiRepoGraph.vcstool.targetFolder` | `""` | Where the paths in the file start. Empty: automatic. |
+| `multiRepoGraph.vcstool.freeze` | `"pinned"` | Which repositories are frozen: `"pinned"`, `"none"` or a list of entry names. |
+
 ## Differences from Speedy Git
 
 - All command and setting names start with `multiRepoGraph` instead of `speedyGit`. You can install both extensions at the same time.

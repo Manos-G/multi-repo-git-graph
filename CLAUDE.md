@@ -33,6 +33,7 @@ pnpm typecheck          # TypeScript type checking (tsc --noEmit)
 pnpm test               # Run unit tests (Vitest, run mode)
 pnpm generate-test-repo # Generate deterministic test repo (see "Test Repository Location" below)
 pnpm generate-submodule-repos # Generate test repos with submodules
+pnpm generate-ros-workspace -- [--commits N] [--yes] # vcstool test workspace (see below)
 pnpm ext:package        # Create .vsix package
 pnpm ext:publish        # Upstream's manual publish script — the fork releases from CI instead
 ```
@@ -49,6 +50,8 @@ kept separate from the source folder:
 | `~/repos/test-repo` | Main deterministic test repo (`main`, `dev`, `feature-*`, `repro/*`) |
 | `~/repos/test-repo-submodules` | Standalone source repos wired in as submodules (`repo-a`, `repo-b`, `test-repo`) |
 | `~/repos/test-repo.worktrees` | Worktrees of the main test repo |
+| `~/repos/test-ros-workspace` | vcstool workspace: main repo with `ros_ws.repos` (the real Eurobot names), 26 clones in `ros_ws/src`, `ros_ws/ros2_info` outside the file, every drift/frozen/missing/extra state — printed by the generator |
+| `~/repos/test-ros-workspace.remotes` | Its local bare remotes (the `url:` of every entry) |
 
 `.vscode/launch.json` already points at the correct location (`${workspaceFolder}/../test-repo`), so
 "Run Extension" opens the right repo.
@@ -310,6 +313,29 @@ Menu/dialog composition:
 - `hooks/useDialogTelemetry.ts` — one confirmed/cancelled outcome per dialog open cycle
 - `hooks/useCommitHookWait.ts` + `components/CommitHookWait.tsx` — the running → "waiting on hooks" phase, its notice and the Cancel / "Cancel wait" button for any dialog that writes a commit (amend, fixup). The button sends the one `cancelCommitWait` RPC itself; the backend's matching half is one `WebviewRuntime.activeCommitController`, held by `commitHandlers`' shared cancellable runner
 - `hooks/useCopyFeedback.ts` — `copyToClipboard` + short "copied" flash, used by every copy button
+
+### vcstool (.repos) support
+
+`src/vcstool/` adds `.repos` files to the Changed Repos panel. The pure parts carry every decision and are tested in `src/vcstool/__tests__/`:
+
+| File | Role |
+| --- | --- |
+| `reposFile.ts` (pure) | Line-based parser for vcstool's block YAML (no YAML dependency) that keeps each value's position, and the only editors of the file: `setVersions`, `addEntry`. They change single values/lines, so order, comments, quotes and line endings survive. Unusual YAML is refused with a message, never guessed |
+| `gitFiles.ts` (pure, fs injected) | HEAD / refs / packed-refs / `gitdir:` / `commondir` / origin URL straight from `.git` — how frozen repositories are checked without a git process |
+| `model.ts` (pure) | Target folder choice, freeze rule, URL normalization, drift, summary line, extras, Lock/Unlock plans, match-day problems, `git status --porcelain=v2` parsing, and the page's `VcsView` type |
+| `VcsToolWorkspace.ts` | Finds/watches the files, builds facts (VS Code's Git state for open repositories, `gitFiles` for the rest), opens repositories, caches the two cheap git questions (`rev-list` against a pin, tag → commit) by HEAD |
+| `vcstoolCommands.ts` | Every `multiRepoGraph.vcstool.*` command, with its confirmation |
+| `MatchDayPanel.ts` + `resources/vcstool/matchday.{js,css}` | The match-day tab (plain JS like the panel) |
+
+Rules:
+
+- **A frozen repository is never opened in VS Code's Git support** (`openRepository` skips it, the panel lists it only in the Frozen group) and **no git process runs in it except the match-day check and explicit user commands** (Lock, Restore, Clone, a fix button). Its routine check is `gitFiles.readHead` on window focus and **Check**. That is the feature's promise; don't add a background `git` call for "accuracy".
+- **The lock marker is load-bearing.** Lock writes `version: <hash>  # locked: <branch>` when it replaces a branch. `isFrozen('pinned')` ignores marked entries (otherwise Lock would freeze the whole workspace), Unlock only touches marked entries (hand pins of third-party libraries stay), and the combined graph finds lock commits by the markers. Change all three together or none.
+- **Edit `.repos` files only through `setVersions` / `addEntry`**, and refuse while the document has unsaved edits in an editor (`writeFile` in `vcstoolCommands.ts`).
+- **Git goes through `VcsToolWorkspace.git_` / `gitOrError`** (→ `GitExecutor`, its timeout and no-op editor). Commands that reach a remote (fetch, clone, push of a frozen repo) pass `NETWORK_ENV` (`GIT_TERMINAL_PROMPT=0`), so a missing credential fails instead of waiting on a prompt nobody sees. Repositories open in VS Code keep using the `vscode.git` API for push/pull (credential helpers, same as Source Control).
+- **Lock refuses** a commit that is not on a remote branch *after a fetch* (`git branch -r --contains`), and a repository whose fetch failed — a lock someone else cannot reproduce is worse than none. **Restore and the checkout fix refuse** a repository with uncommitted changes.
+- The page sends `{ type: 'vcs', action, file, name, path, fix }`; `ChangedReposView.onMessage` runs only actions on its allowlist as `multiRepoGraph.vcstool.<action>`. Add a new button's action there.
+- Workspace settings are written only by **Apply…** (`writeRecommendedSettings`) after a modal confirmation: `git.autoRepositoryDetection: false` and removing `git.repositoryScanMaxDepth`. With detection off, the extension opens the main repository, every non-frozen listed one and the extras itself.
 
 ### What's New in the fork
 

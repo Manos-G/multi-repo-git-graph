@@ -44,6 +44,23 @@ src/
 │   │                             #   repoState → the plain RepoState/ViewState sent to the page
 │   ├── gitApi.ts                 # Types for the used part of the vscode.git API v1; GitStatus as plain constants
 │   └── __tests__/repoState.test.ts # The pure helpers above
+├── vcstool/                      # FORK: vcstool .repos support inside the Changed Repos panel (rules in CLAUDE.md)
+│   ├── reposFile.ts              # PURE: line-based .repos parser keeping value positions; setVersions/addEntry edit
+│   │                             #   single lines (order, comments, quotes, CRLF kept); isCommitHash, lockedFrom
+│   │                             #   (`# locked: <branch>`), yamlScalar
+│   ├── gitFiles.ts               # PURE (fs injected): HEAD/refs/packed-refs/gitdir/commondir/origin URL from .git —
+│   │                             #   frozen repositories are checked with no git process; findRepoRoot
+│   ├── model.ts                  # PURE: target folder choice, freeze rule, remote URL normalization, drift +
+│   │                             #   sentences, summary line, extras, planLock/planUnlock, match-day problems,
+│   │                             #   parseStatusV2, VcsView (the page's state)
+│   ├── VcsToolWorkspace.ts       # Finds/watches .repos files, builds facts (vscode.git state or gitFiles), opens
+│   │                             #   non-frozen + main + extra repos (openRepository), cached rev-list/rev-parse,
+│   │                             #   git_/gitOrError via GitExecutor (NETWORK_ENV for remotes), viewState()
+│   ├── vcstoolCommands.ts        # multiRepoGraph.vcstool.* — check, lock/unlock (+ commit only the file), restore
+│   │                             #   (file or its history), clone, add to file, target folder, recommended settings, fix
+│   ├── MatchDayPanel.ts          # The match-day tab: fetch, `git status --porcelain=v2` everywhere (frozen too),
+│   │                             #   pinned-on-remote, problems with fix buttons
+│   └── __tests__/                # reposFile, gitFiles, model
 ├── webview/                      # Backend webview subsystem (refactored from the old ~2400-line WebviewProvider)
 │   ├── GraphTab.ts               # ONE graph = one editor tab: everything view-scoped, composed from the objects below
 │   ├── createGitServices.ts      # Builds the whole repo-bound service set in one place
@@ -527,15 +544,23 @@ esbuild.config.mjs                # Production-only telemetry destination inject
 
 ```
 resources/
+├── vcstool/
+│   ├── matchday.js               # Match-day page, plain JS: Ready / problems per file, fix buttons, re-check
+│   └── matchday.css              # Theme tokens only
 ├── changed-repos/
 │   ├── view.js                   # Changed Repos page, plain JS: one DOM section per repo kept between updates (message
-│   │                             #   box keeps text/focus/cursor), data-vscode-context per row, posts actions to the view
+│   │                             #   box keeps text/focus/cursor), data-vscode-context per row, posts actions to the view;
+│   │                             #   three containers: .repos headers/missing/extras (#vcs-top), repositories with drift
+│   │                             #   lines (#repos), the collapsed Frozen group (#vcs-bottom)
 │   └── view.css                  # Source Control look; every color a var(--vscode-*) token
 ├── codicons/                     # THIRD-PARTY Microsoft Codicons: codicon.css + codicon.ttf, LICENSE-CC-BY-4.0,
 │                                 #   LICENSE-CODE-MIT, README.txt — keep the licence files with the font
 ├── views/changed-repos.svg       # Activity Bar icon of the Multi-Repo Git Graph container
 └── multi-repo-git-graph-icon-128.png # Extension icon (package.json "icon")
 ```
+
+`scripts/generate-ros-workspace.ts` (`pnpm generate-ros-workspace`) builds `~/repos/test-ros-workspace`: the Eurobot
+layout with local bare remotes and every vcstool test state; histories via `git fast-import` (`--commits N`).
 
 Tests live in `__tests__/` directories beside the code they cover (Vitest).
 `webview-ui/src/components/__tests__/ResponsiveToolbar.test.ts` covers collapse thresholds (incl. the left group's two phases),
