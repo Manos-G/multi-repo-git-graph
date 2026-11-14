@@ -18,6 +18,7 @@ export default defineConfig({
       'src/__tests__/**/*.test.ts',
       'src/changedRepos/__tests__/**/*.test.ts',
       'src/vcstool/__tests__/**/*.test.ts',
+      'src/combinedGraph/__tests__/**/*.test.ts',
       'webview-ui/src/**/__tests__/**/*.test.ts',
     ],
   },

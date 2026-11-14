@@ -131,12 +131,14 @@ function writeHistory(bare: string, name: string, count: number, rand: Rand, now
   const chunks: string[] = [];
   const data = (s: string) => `data ${Buffer.byteLength(s)}\n${s}\n`;
   const span = Math.max(count, 30) * 3600 * 4; // ~4 h per commit on average
+  const step = span / count;
   let t = now - span;
   let mark = 0;
   let prev = 0;
   for (let i = 1; i <= count; i++) {
-    t += Math.floor(rand.next() * 8 * 3600) + 60;
-    if (t > now - 3600) t = now - 3600 - (count - i) * 60;
+    // evenly spread with jitter, always after the previous commit, newest about an hour ago
+    const target = now - span + Math.floor(i * step - rand.next() * step * 0.8) - 3600;
+    t = Math.max(t + 60, target);
     const author = rand.pick(AUTHORS);
     const sig = `${author.name} <${author.email}> ${t} +0000`;
     const message = i === 1 ? `Initial ${name} package` : `${rand.pick(VERBS)} ${rand.pick(THINGS)} in ${name}`;

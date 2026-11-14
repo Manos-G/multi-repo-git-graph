@@ -98,7 +98,7 @@ If you prefer to keep the token, skip this. The workflow keeps using `OVSX_PAT`,
    ```
 6. Watch the run: `gh run watch --repo Manos-G/multi-repo-git-graph` (or the **Actions** tab).
 
-The first public release is **0.2.0**: after the one-time setup, skip steps 1 and 2 (already done) and push the tag `v0.2.0`.
+The first public release is **0.3.0**: after the one-time setup, skip steps 1 and 2 (already done) and push the tag `v0.3.0`.
 
 ### If a job fails
 

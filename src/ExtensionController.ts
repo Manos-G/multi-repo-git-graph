@@ -340,6 +340,19 @@ export class ExtensionController {
   }
 
   /**
+   * The combined graph's "Open in <repository> graph": the repository-aware routing of the
+   * SCM button (reveal a graph already showing it, else create one), then select the commit.
+   */
+  async revealCommitInRepo(repoPath: string, hash: string): Promise<void> {
+    this.shared.repoDiscovery.setActiveRepo(repoPath);
+    const target = pickRepoTarget(this.registry.snapshots(), repoPath);
+    let tab = target ? this.registry.get(target.id) : undefined;
+    if (tab) tab.reveal();
+    else tab = await this.createTab(repoPath, vscode.ViewColumn.Active, 'scmButton');
+    tab?.revealCommit(hash);
+  }
+
+  /**
    * Open another graph, seeded from the originating graph's TOP-LEVEL repo —
    * not a submodule it has navigated into — in the same editor group.
    *

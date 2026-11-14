@@ -97,8 +97,29 @@ class RpcClient {
 
   private messageHandler = (event: MessageEvent) => {
     const message = event.data as ResponseMessage;
-    this.handleMessage(message);
+    if (message.type === 'revealCommit') {
+      this.pendingRevealHash = message.payload.hash;
+    } else {
+      this.handleMessage(message);
+    }
+    this.flushPendingReveal();
   };
+
+  /**
+   * A commit the combined graph asked this tab to select. Kept until the graph is idle (the
+   * tab may still be loading its first batch), then run through the same navigation as
+   * "Go to parent/child commit", so a commit deeper than the loaded batches is still found.
+   */
+  private pendingRevealHash: string | null = null;
+
+  private flushPendingReveal() {
+    const hash = this.pendingRevealHash;
+    if (!hash) return;
+    const store = useGraphStore.getState();
+    if (store.loading || store.goToHeadState !== 'idle' || store.commits.length === 0) return;
+    this.pendingRevealHash = null;
+    this.goToRelatedCommit(hash, 'commit');
+  }
 
   initialize() {
     if (this.initialized) return;
@@ -1105,7 +1126,7 @@ class RpcClient {
    * known hash. A loaded row is decided here; only a commit deeper than the
    * loaded batches is located by the backend, then loaded like HEAD would be.
    */
-  goToRelatedCommit(hash: string, target: 'parent' | 'child') {
+  goToRelatedCommit(hash: string, target: 'parent' | 'child' | 'commit') {
     const store = useGraphStore.getState();
     if (store.goToHeadState !== 'idle' || store.loading) return;
     this.activeNavigationFetch = null;

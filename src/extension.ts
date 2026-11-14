@@ -24,6 +24,8 @@ export function activate(context: vscode.ExtensionContext) {
   // Its Git Graph button opens each repository in its own graph tab.
   void registerChangedReposView(context, {
     openGraph: (repoRoot) => controller?.openForRepo({ rootUri: repoRoot } as vscode.SourceControl),
+    revealCommit: async (repoPath, hash) => controller?.revealCommitInRepo(repoPath, hash),
+    diffService: (repoPath) => controller!.resolveDiffService(repoPath),
     log,
   }).catch((err) => log.error(`Changed Repos panel failed to start: ${err}`));
 

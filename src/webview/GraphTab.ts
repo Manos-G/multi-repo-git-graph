@@ -194,6 +194,25 @@ export class GraphTab {
 
   postMessage(message: ResponseMessage): void {
     this.panelHost.postMessage(message);
+    if (message.type === 'initialData') {
+      this.initialDataPosted = true;
+      if (this.pendingRevealHash) {
+        this.panelHost.postMessage({ type: 'revealCommit', payload: { hash: this.pendingRevealHash } });
+        this.pendingRevealHash = undefined;
+      }
+    }
+  }
+
+  private initialDataPosted = false;
+  private pendingRevealHash: string | undefined;
+
+  /**
+   * Select a commit in this tab (the combined graph's "Open in <repository> graph"). A message
+   * posted before `initialData` can be lost (#221), so a new tab sends it right after.
+   */
+  revealCommit(hash: string): void {
+    if (this.initialDataPosted) this.panelHost.postMessage({ type: 'revealCommit', payload: { hash } });
+    else this.pendingRevealHash = hash;
   }
 
   /** Whether a peer tab on this working tree is running an operation right now. */
