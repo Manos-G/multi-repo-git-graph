@@ -2,6 +2,18 @@ import * as crypto from 'crypto';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { GitStatus, type GitApi, type GitChange, type GitRepository } from './gitApi.js';
+import {
+  GROUP_ORDER,
+  branchLabel,
+  groupChanges,
+  needsAttention,
+  pushRepos,
+  remoteRepos,
+  repoName,
+  repoState,
+  type GroupKind,
+  type ViewState,
+} from './repoState.js';
 
 /**
  * "Changed Repos" panel.
@@ -19,15 +31,6 @@ const VIEW_ID = 'multiRepoGraph.changedRepos';
 const CFG = 'multiRepoGraph.changedRepos';
 const CTX_SHOWING_ALL = 'multiRepoGraph.changedRepos.showingAll';
 
-type GroupKind = 'merge' | 'index' | 'workingTree' | 'untracked';
-const GROUP_ORDER: GroupKind[] = ['merge', 'index', 'workingTree', 'untracked'];
-const GROUP_LABEL: Record<GroupKind, string> = {
-  merge: 'Merge Changes',
-  index: 'Staged Changes',
-  workingTree: 'Changes',
-  untracked: 'Untracked Changes',
-};
-
 function cfg() {
   const c = vscode.workspace.getConfiguration(CFG);
   return {
@@ -44,142 +47,10 @@ function cfg() {
 // Repository helpers
 // ---------------------------------------------------------------------------
 
-const repoName = (repo: GitRepository) => path.basename(repo.rootUri.fsPath);
-
-function branchLabel(repo: GitRepository): string {
-  const head = repo.state.HEAD;
-  if (head?.name) return head.name;
-  if (head?.commit) return `${head.commit.slice(0, 8)} (detached)`;
-  return '?';
-}
-
-function groupChanges(repo: GitRepository, kind: GroupKind): GitChange[] {
-  const s = repo.state;
-  if (kind === 'merge') return s.mergeChanges;
-  if (kind === 'index') return s.indexChanges;
-  if (kind === 'workingTree') return s.workingTreeChanges;
-  return s.untrackedChanges ?? [];
-}
-
-function fileCount(repo: GitRepository): number {
-  const paths = new Set<string>();
-  for (const g of GROUP_ORDER) for (const ch of groupChanges(repo, g)) paths.add(ch.uri.fsPath);
-  return paths.size;
-}
-
-function needsAttention(repo: GitRepository): boolean {
-  const c = cfg();
-  const head = repo.state.HEAD;
-  return (
-    fileCount(repo) > 0 ||
-    (c.includeUnpushed && (head?.ahead ?? 0) > 0) ||
-    (c.includeBehind && (head?.behind ?? 0) > 0) ||
-    (c.includeNoUpstream && !!head?.name && !head.upstream)
-  );
-}
-
 const unstagedPaths = (repo: GitRepository) => [
   ...repo.state.workingTreeChanges.map((c) => c.uri.fsPath),
   ...(repo.state.untrackedChanges ?? []).map((c) => c.uri.fsPath),
 ];
-
-/** Status letter and color class, the same as the Source Control view uses. */
-function statusInfo(status: number, group: GroupKind): { letter: string; cls: string; deleted: boolean } {
-  const S = GitStatus;
-  switch (status) {
-    case S.INDEX_MODIFIED:
-      return { letter: 'M', cls: 'st-stage-modified', deleted: false };
-    case S.MODIFIED:
-    case S.TYPE_CHANGED:
-      return { letter: status === S.TYPE_CHANGED ? 'T' : 'M', cls: 'st-modified', deleted: false };
-    case S.INDEX_ADDED:
-    case S.INTENT_TO_ADD:
-      return { letter: 'A', cls: 'st-added', deleted: false };
-    case S.INDEX_DELETED:
-      return { letter: 'D', cls: 'st-stage-deleted', deleted: true };
-    case S.DELETED:
-      return { letter: 'D', cls: 'st-deleted', deleted: true };
-    case S.INDEX_RENAMED:
-    case S.INTENT_TO_RENAME:
-      return { letter: 'R', cls: 'st-renamed', deleted: false };
-    case S.INDEX_COPIED:
-      return { letter: 'C', cls: 'st-added', deleted: false };
-    case S.UNTRACKED:
-      return { letter: 'U', cls: 'st-untracked', deleted: false };
-    default:
-      return { letter: group === 'merge' ? '!' : '?', cls: 'st-conflict', deleted: false };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// State sent to the page
-// ---------------------------------------------------------------------------
-
-interface FileState {
-  path: string;
-  name: string;
-  dir: string;
-  letter: string;
-  cls: string;
-  deleted: boolean;
-}
-interface GroupState {
-  kind: GroupKind;
-  label: string;
-  files: FileState[];
-}
-interface RepoState {
-  path: string;
-  name: string;
-  branch: string;
-  ahead: number;
-  behind: number;
-  hasUpstream: boolean;
-  unpublished: boolean;
-  isWorkspaceRoot: boolean;
-  message: string;
-  fileCount: number;
-  groups: GroupState[];
-}
-interface ViewState {
-  repos: RepoState[];
-  total: number;
-  changed: number;
-  showAll: boolean;
-}
-
-function repoState(repo: GitRepository, root: string | undefined): RepoState {
-  const head = repo.state.HEAD;
-  const groups: GroupState[] = [];
-  for (const kind of GROUP_ORDER) {
-    const changes = groupChanges(repo, kind);
-    if (changes.length === 0) continue;
-    groups.push({
-      kind,
-      label: GROUP_LABEL[kind],
-      files: [...changes]
-        .sort((a, b) => a.uri.fsPath.localeCompare(b.uri.fsPath))
-        .map((c) => {
-          const rel = path.relative(repo.rootUri.fsPath, c.uri.fsPath);
-          const dir = path.dirname(rel);
-          return { path: c.uri.fsPath, name: path.basename(rel), dir: dir === '.' ? '' : dir, ...statusInfo(c.status, kind) };
-        }),
-    });
-  }
-  return {
-    path: repo.rootUri.fsPath,
-    name: repoName(repo),
-    branch: branchLabel(repo),
-    ahead: head?.ahead ?? 0,
-    behind: head?.behind ?? 0,
-    hasUpstream: !!head?.upstream,
-    unpublished: !!head?.name && !head.upstream,
-    isWorkspaceRoot: repo.rootUri.fsPath === root,
-    message: repo.inputBox.value,
-    fileCount: fileCount(repo),
-    groups,
-  };
-}
 
 // ---------------------------------------------------------------------------
 // The panel
@@ -221,7 +92,8 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
   }
 
   changedRepos(): GitRepository[] {
-    return this.sortedRepos().filter(needsAttention);
+    const opts = cfg();
+    return this.sortedRepos().filter((r) => needsAttention(r, opts));
   }
 
   findRepo(repoPath: string | undefined): GitRepository | undefined {
@@ -644,14 +516,25 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
   reg('showAll', () => panel.setShowAll(true));
   reg('showChangedOnly', () => panel.setShowAll(false));
   reg('refresh', () => panel.run('Refreshing repositories', () => Promise.all(git.repositories.map((r) => r.status()))));
-  reg('fetchAll', () =>
-    panel.run('Fetching all repositories', async () => {
-      const queue = git.repositories.filter((r) => !!r.state.HEAD?.upstream);
+  // Runs one remote operation on the selected repositories, 4 at a time.
+  // A failure in one repository does not stop the others; all failures are reported together.
+  const runOnAllRemotes = (
+    title: string,
+    verb: string,
+    select: (repos: readonly GitRepository[]) => GitRepository[],
+    op: (r: GitRepository) => Promise<void>,
+  ) =>
+    panel.run(title, async () => {
+      const queue = select(git.repositories);
+      if (queue.length === 0) {
+        void vscode.window.showInformationMessage(`${verb} All: no repositories to ${verb.toLowerCase()}.`);
+        return;
+      }
       const failures: string[] = [];
       const worker = async () => {
         for (let r = queue.shift(); r; r = queue.shift()) {
           try {
-            await r.fetch();
+            await op(r);
           } catch (err) {
             failures.push(`${repoName(r)}: ${(err as Error).message ?? err}`);
           }
@@ -659,10 +542,12 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
       };
       await Promise.all([worker(), worker(), worker(), worker()]);
       if (failures.length > 0) {
-        void vscode.window.showWarningMessage(`Fetch failed in ${failures.length} repositories: ${failures.slice(0, 3).join(' | ')}`);
+        void vscode.window.showWarningMessage(`${verb} failed in ${failures.length} repositories: ${failures.slice(0, 3).join(' | ')}`);
       }
-    }),
-  );
+    });
+  reg('fetchAll', () => runOnAllRemotes('Fetching all repositories', 'Fetch', remoteRepos, (r) => r.fetch()));
+  reg('pullAll', () => runOnAllRemotes('Pulling all repositories', 'Pull', remoteRepos, (r) => r.pull()));
+  reg('pushAll', () => runOnAllRemotes('Pushing all repositories', 'Push', pushRepos, (r) => r.push()));
 
   // Right-click menu commands. VS Code passes the row's data-vscode-context object.
   const repoCmd = (id: string, action: string) =>

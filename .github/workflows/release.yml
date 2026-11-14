@@ -1,0 +1,168 @@
+# Release Multi-Repo Git Graph when a version tag (v1.2.3) is pushed.
+#
+#   build              lint, typecheck, test, build:prod, package the .vsix once
+#   marketplace        VS Code Marketplace, Trusted Publishing (OIDC, no secret)
+#   openvsx            Open VSX: the OVSX_PAT secret while it exists, otherwise
+#                      Trusted Publishing (OIDC). Open VSX accepts OIDC only for an
+#                      extension that already has a version, so the first release
+#                      needs the token. See RELEASING.md.
+#   github-release     GitHub Release for the tag with the .vsix attached
+#
+# Both publish jobs upload the exact .vsix that was tested in "build".
+# vsce 4 and ovsx 1.4 need Node 22; they are pinned here on purpose (the repo's
+# own @vscode/vsce devDependency is older and has no --oidc flag).
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+  VSCE: '@vscode/vsce@4.1.1'
+  OVSX: 'ovsx@1.4.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      vsix: ${{ steps.version.outputs.vsix }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6 # version from "packageManager" in package.json
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            webview-ui/pnpm-lock.yaml
+
+      - name: Check that the tag matches package.json
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${TAG}" ]; then
+            echo "::error::Tag ${TAG} does not match package.json version ${version}"
+            exit 1
+          fi
+          name="$(node -p "require('./package.json').name")"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "vsix=${name}-${version}.vsix" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --dir webview-ui install --frozen-lockfile
+
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+      - run: pnpm build:prod
+
+      - name: Package
+        env:
+          VSIX: ${{ steps.version.outputs.vsix }}
+        run: npx --yes "$VSCE" package --no-dependencies --out "$VSIX"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vsix
+          path: ${{ steps.version.outputs.vsix }}
+          if-no-files-found: error
+
+  marketplace:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: vsix
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Publish to the VS Code Marketplace
+        env:
+          VSIX: ${{ needs.build.outputs.vsix }}
+        run: npx --yes "$VSCE" publish --no-dependencies --oidc --skip-duplicate --packagePath "$VSIX"
+
+  openvsx:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Trusted Publishing, used when OVSX_PAT is not set
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: vsix
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Publish to Open VSX
+        env:
+          VSIX: ${{ needs.build.outputs.vsix }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -n "${OVSX_PAT}" ]; then
+            echo "Publishing with the OVSX_PAT access token"
+            npx --yes "$OVSX" publish "$VSIX" -p "$OVSX_PAT" --skip-duplicate
+          else
+            echo "OVSX_PAT is not set: publishing with Trusted Publishing (OIDC)"
+            npx --yes "$OVSX" publish "$VSIX" --trusted-publishing --skip-duplicate
+          fi
+
+  github-release:
+    needs: [build, marketplace, openvsx]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: vsix
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.build.outputs.version }}
+          VSIX: ${{ needs.build.outputs.vsix }}
+        run: |
+          # Release notes: the "## [VERSION]" section of CHANGELOG.md.
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && (/^## / || /^---$/) { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "No CHANGELOG.md section for ${VERSION}." > notes.md
+          fi
+          gh release create "$TAG" "$VSIX" \
+            --verify-tag \
+            --title "Multi-Repo Git Graph ${VERSION}" \
+            --notes-file notes.md

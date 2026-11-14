@@ -1,8 +1,36 @@
 # Changelog
 
-All notable changes to the "speedy-git-ext" extension will be documented in this file.
+All notable changes to Multi-Repo Git Graph are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+Multi-Repo Git Graph is a fork of [Speedy Git](https://github.com/onlineeric/speedy-git-ext). The fork's own versions come first. Below them is the Speedy Git history the fork is based on (up to 5.24.2).
+
+## [0.2.0] - 2026-11-14
+
+### Added
+- **Pull All Repositories** and **Push All Repositories** buttons in the Changed Repos panel's title bar, next to **Fetch All Repositories**. Pull All pulls every repository whose branch has an upstream. Push All pushes every repository with commits to push. It never publishes a branch that has no upstream; that stays **Publish Branch** on the repository. Both run four repositories at a time. A repository that fails (for example, a push rejected because the remote has new commits) does not stop the others, and the failures are listed together at the end.
+
+### Changed
+- **The Changed Repos panel now looks and works like the Source Control view.** Each repository has a header with its branch, the commits to pull (↓) and push (↑), and an **Open Git Graph** button. Under it are a message box (**Ctrl+Enter** commits, and the draft is shared with Source Control), a **Commit** button whose arrow offers **Commit & Push** and **Commit & Sync**, and the **Merge Changes**, **Staged Changes** and **Changes** groups with their file counts. When there is nothing to commit, the button becomes **Sync Changes** or **Publish Branch**.
+- Files show the same status letters and colors as Source Control. Stage, unstage, discard and open buttons appear when you move the pointer over a row. Clicking a file opens the same diff as Source Control.
+- **Right-click menus** on repositories, groups and files, with Pull, Push, Fetch, Open in Terminal, Reveal in Explorer View and more.
+- The panel follows your color theme and uses VS Code's own icons ([Codicons](https://github.com/microsoft/vscode-codicons)).
+
+## [0.1.0] - 2026-11-14
+
+### Added
+- **Changed Repos panel**, with its own icon in the Activity Bar. It lists only the repositories that need attention: changed, staged, new or conflicted files, and commits to push or pull. Clean repositories are hidden, and the status bar shows how many repositories changed. Per repository you can commit (when nothing is staged, it offers to stage everything first), stage, unstage, discard (after you confirm), push, pull, sync, publish a branch, fetch, and open a terminal. **Fetch All**, **Refresh** and **Show All Repositories** are in the panel's title bar. Settings: `multiRepoGraph.changedRepos.*`.
+- **One graph tab per repository.** The panel's **Open Git Graph** button opens each repository in its own graph tab, or switches to it if it is already open.
+
+### Changed
+- **Renamed from Speedy Git to Multi-Repo Git Graph.** Every command, setting and view uses the prefix `multiRepoGraph` instead of `speedyGit`, so the extension can be installed next to Speedy Git. Settings saved under `speedyGit.*` are not carried over.
+- **Telemetry is always off.** Multi-Repo Git Graph never sends usage data, whatever your VS Code telemetry setting says.
+- The What's New dialog no longer opens on its own. The toolbar's **News** button still shows Speedy Git's release notes.
+
+---
+
+## Speedy Git history
 
 ## [5.24.2] - 2026-11-12
 
