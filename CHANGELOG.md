@@ -4,9 +4,9 @@ All notable changes to Multi-Repo Git Graph are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-Multi-Repo Git Graph is a fork of [Speedy Git](https://github.com/onlineeric/speedy-git-ext). The fork's own versions come first. Below them is the Speedy Git history the fork is based on (up to 5.24.2).
+Multi-Repo Git Graph is a fork of [Speedy Git](https://github.com/onlineeric/speedy-git-ext). 0.3.0 is the first version published to the stores; 0.1.0 and 0.2.0 were local builds. The fork's own versions come first. Below them is the Speedy Git history the fork is based on (up to 5.24.2).
 
-## [Unreleased]
+## [0.3.0] - 2026-11-14
 
 ### Added
 - **Combined graph ("All Repositories")**: one tab with every repository's commits in one timeline, newest first and grouped by day. Each repository has its own lane band and color; branches and merges stay inside it. Pages of 200 commits per repository merged by commit date, more as you scroll. Lock lines from the `.repos` history, change-set tags (same author, two or more repositories, 15 minutes; `multiRepoGraph.combinedGraph.changeSetMinutes`), filters for repositories, time range, author and message search, commit details with diffs, and **Open in <repository> graph**, which selects the commit in that repository's own graph. Open it from the Changed Repos title bar, the command palette or the status bar menu.
