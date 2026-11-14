@@ -78,6 +78,24 @@ and removes `git.repositoryScanMaxDepth`. Reload the window afterwards.
 | `multiRepoGraph.vcstool.targetFolder` | `""` | Where the paths in the file start. Empty: automatic. |
 | `multiRepoGraph.vcstool.freeze` | `"pinned"` | Which repositories are frozen: `"pinned"`, `"none"` or a list of entry names. |
 
+## Combined graph (All Repositories)
+
+One graph tab with the commits of every repository in one timeline, newest first, grouped by day. Open it with the first button in the Changed Repos panel's title bar, the **Open Combined Graph** command, or the status bar menu (click the `changed` count).
+
+- **One lane per repository**, in the repository's own color, with its name on each row. Branches and merges of a repository are drawn inside its lane band. This version shows each repository's **current branch**.
+- **Loads in pages** (200 commits per repository, `multiRepoGraph.combinedGraph.pageSize`) and merges them by **commit date**; scrolling loads more from the repositories that need it.
+- **Lock lines**: every commit of a `.repos` file that locked versions is a dashed line across all lanes, labelled with its message, for example "🔒 Lock versions for Match 1".
+- **Change sets**: commits by the same author in two or more repositories within 15 minutes (`multiRepoGraph.combinedGraph.changeSetMinutes`) get a **◆ set** tag; click it to select them all.
+- **Filters**: which repositories (frozen ones are off by default), a time range (today, this week, since the last lock, custom), an author, and a search in commit messages. Author and search look through the whole history of every repository; while they are on, the graph shows dots only.
+- **Details**: click a commit for its files; click a file for the diff. **Open in <repository> graph** opens that repository's own graph tab and selects the commit.
+
+On the test workspace (21 repositories, about 2000 commits each) the first screen shows about 4000 commits in about 0.6 s.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `multiRepoGraph.combinedGraph.changeSetMinutes` | `15` | Time window of a change set. |
+| `multiRepoGraph.combinedGraph.pageSize` | `200` | Commits loaded per repository at a time. |
+
 ## Differences from Speedy Git
 
 - All command and setting names start with `multiRepoGraph` instead of `speedyGit`. You can install both extensions at the same time.

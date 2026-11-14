@@ -44,6 +44,14 @@ src/
 │   │                             #   repoState → the plain RepoState/ViewState sent to the page
 │   ├── gitApi.ts                 # Types for the used part of the vscode.git API v1; GitStatus as plain constants
 │   └── __tests__/repoState.test.ts # The pure helpers above
+├── combinedGraph/                # FORK: the combined graph tab ("All Repositories"; rules in CLAUDE.md)
+│   ├── CombinedGraphPanel.ts     # Singleton webview panel (dist/webview/assets/combined.*): repo list (frozen off by
+│   │                             #   default, main repo first), lock lines from each .repos history, one log page per
+│   │                             #   request (count+1 tells hasMore), details via resolveDiffService, git-show: diffs,
+│   │                             #   Open in <repo> graph, first-screen timing log
+│   ├── combinedLog.ts            # PURE: `git log --date-order HEAD` page args (+ --since/--until/--author/--grep),
+│   │                             #   parse (%ct commit date), lockSignature/findLockLines, isEmptyRepoError
+│   └── __tests__/combinedLog.test.ts
 ├── vcstool/                      # FORK: vcstool .repos support inside the Changed Repos panel (rules in CLAUDE.md)
 │   ├── reposFile.ts              # PURE: line-based .repos parser keeping value positions; setVersions/addEntry edit
 │   │                             #   single lines (order, comments, quotes, CRLF kept); isCommitHash, lockedFrom
@@ -62,7 +70,8 @@ src/
 │   │                             #   pinned-on-remote, problems with fix buttons
 │   └── __tests__/                # reposFile, gitFiles, model
 ├── webview/                      # Backend webview subsystem (refactored from the old ~2400-line WebviewProvider)
-│   ├── GraphTab.ts               # ONE graph = one editor tab: everything view-scoped, composed from the objects below
+│   ├── GraphTab.ts               # ONE graph = one editor tab: everything view-scoped, composed from the objects below;
+│                             #   revealCommit holds a hash until initialData was posted (combined graph → this tab)
 │   ├── createGitServices.ts      # Builds the whole repo-bound service set in one place
 │   ├── WebviewPanelHost.ts       # One VS Code panel: lifecycle, HTML/CSP/nonce, postMessage, visible/active state
 │   ├── WebviewRuntime.ts         # Mutable non-service state: displayed + top-level repo path, resolved identity,
@@ -396,6 +405,23 @@ hooks/
                                   #   would defeat the check, since the tab auto-refreshes while a dialog is open
 
 types/displayRefs.ts              # Discriminated union for ref-label rendering (local-branch/remote-branch/tag/HEAD/…)
+```
+
+### Combined graph — `webview-ui/src/combined/` (own entry: `combined.html`, `vite.combined.config.ts` → `assets/combined.js`)
+
+```
+├── main.tsx                      # Listener before render, then <CombinedApp/>, then `ready`
+├── CombinedApp.tsx               # Toolbar (repositories, time range, author, search, refresh), virtualized rows
+│                                 #   (day / lock / commit; GraphCell for lanes, GapCell for day/lock rows), details
+│                                 #   panel (files → diffs, Open in <repo> graph, change-set list), first-screen timing
+├── store.ts                      # Zustand state; per-repo streams; pages 6 in flight; filter generations drop stale
+│                                 #   answers; persisted repository selection and time range
+├── layout.ts                     # PURE: per-repo topology → shifted bands → one GraphTopology keyed `<repo>:<hash>`;
+│                                 #   newest-first merge by commit date up to the frontier; day headers, lock rows,
+│                                 #   other repos' lines as passing lanes; bottleneck; dots-only mode
+├── changeSets.ts                 # PURE: same author, ≥2 repos, span ≤ window from the first commit
+├── timeRange.ts                  # PURE: today / this week (Monday) / since last lock / custom → since/until
+└── __tests__/layout.test.ts      # layout, change sets, time ranges
 ```
 
 ### Utils

@@ -337,6 +337,20 @@ Rules:
 - The page sends `{ type: 'vcs', action, file, name, path, fix }`; `ChangedReposView.onMessage` runs only actions on its allowlist as `multiRepoGraph.vcstool.<action>`. Add a new button's action there.
 - Workspace settings are written only by **Apply…** (`writeRecommendedSettings`) after a modal confirmation: `git.autoRepositoryDetection: false` and removing `git.repositoryScanMaxDepth`. With detection off, the extension opens the main repository, every non-frozen listed one and the extras itself.
 
+### Combined graph (All Repositories)
+
+`src/combinedGraph/` (backend) + `webview-ui/src/combined/` (its own small React app, `combined.html`, built by `vite.combined.config.ts` into the self-contained `dist/webview/assets/combined.js` + `combined.css`). The backend only answers: one page of one repository's log (`combinedLog.ts`: `git log --date-order HEAD`, `%ct` added, author/search as `--author`/`--grep -i -F`), the lock lines, a commit's details (the window's `resolveDiffService`), a diff (`git-show:` URIs built with `buildGitShowUriParts`, so any repository works), and "Open in <repository> graph". The webview owns the buffers, the merge and the lanes — the same split as the normal graph.
+
+- **`layout.ts` is the one place rows and lanes are decided** (pure, tested). Each repository's topology comes from the normal `calculateTopology`, is shifted into the repository's band and recolored, and the bands are merged into one `GraphTopology` keyed by **`<repo index>:<hash>`** (two clones of one project share hashes). The normal **`GraphCell` draws a combined row unchanged**; other repositories' lines are that row's passing lanes. Don't fork GraphCell for the combined view.
+- **The frontier rule**: only commits at or newer than the newest "last loaded commit" among repositories that still have more are shown, so nothing can later appear above a row already shown. `bottleneck` names who must load next. A repository whose first page has not arrived blocks everything (that is the first screen).
+- **Commit date is the merge key** (git's own `--date-order` key, so every repository's stream is already in that order; author dates of rebased commits would jump). Lock lines use commit dates too.
+- **Lock lines** = commits of a `.repos` file whose `# locked:` markers changed, or whose message starts with "Lock" (`findLockLines`).
+- **Change sets** never span more than the window from their first commit (`changeSets.ts`), so steady work does not chain into one huge set.
+- With an author or search filter the rows are **dots only** — the lines would claim parents that are not shown.
+- **The bundle must stay one classic script** (no runtime chunk imports, no `import.meta`): the webview loads it with a CSP nonce, like the main graph. Keep `inlineDynamicImports`.
+- **"Open in <repository> graph"** is `ExtensionController.revealCommitInRepo` → `GraphTab.revealCommit`, which holds the hash until `initialData` has been posted (#221), → the webview's `revealCommit` message → `rpcClient.goToRelatedCommit(hash, 'commit')`, the existing go-to-commit state machine. Don't add a second navigation path.
+- The first screen is logged: `Combined graph: first screen in N ms — X commits from Y repositories`.
+
 ### What's New in the fork
 
 The upstream What's New popup is disabled in this fork (`FORK_DISABLE_WHATS_NEW_POPUP` in `src/webview/GraphTab.ts`). The toolbar's News button still shows upstream's notes. New fork features are described in `CHANGELOG.md` (fork section at the top) and `README.md`, **not** in `whatsNewEntries.tsx`.

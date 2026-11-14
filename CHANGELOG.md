@@ -9,6 +9,8 @@ Multi-Repo Git Graph is a fork of [Speedy Git](https://github.com/onlineeric/spe
 ## [Unreleased]
 
 ### Added
+- **Combined graph ("All Repositories")**: one tab with every repository's commits in one timeline, newest first and grouped by day. Each repository has its own lane band and color; branches and merges stay inside it. Pages of 200 commits per repository merged by commit date, more as you scroll. Lock lines from the `.repos` history, change-set tags (same author, two or more repositories, 15 minutes; `multiRepoGraph.combinedGraph.changeSetMinutes`), filters for repositories, time range, author and message search, commit details with diffs, and **Open in <repository> graph**, which selects the commit in that repository's own graph. Open it from the Changed Repos title bar, the command palette or the status bar menu.
+- The Changed Repos status bar item opens a small menu: Changed Repos, Combined Graph, Match-Day Check, Fetch / Pull / Push All.
 - **vcstool (`.repos`) support** in the Changed Repos panel. The extension finds `*.repos` files (or the ones in `multiRepoGraph.vcstool.files`), works out the folder their paths start in (`multiRepoGraph.vcstool.targetFolder` to change it), and opens every listed repository in VS Code's Git support, so `git.repositoryScanMaxDepth` is not needed any more.
 - **Drift** from the file on each repository's row: another branch, another commit than a pinned hash (ahead, behind or diverged), another `origin` URL. A summary line per file, for example `ros_ws.repos · 26 repos · 2 drift · 1 missing`.
 - **Missing** repositories with a **Clone** button, and repositories **not in the file** with an **Add to File** button.
