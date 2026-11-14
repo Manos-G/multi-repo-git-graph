@@ -1,0 +1,361 @@
+/* Changed Repos panel. Copies the layout of the VS Code Source Control view.
+   All colors come from the current VS Code theme. */
+
+:root {
+  --row-height: 22px;
+  --indent: 8px;
+  --twisty: 16px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  color: var(--vscode-foreground);
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  font-weight: var(--vscode-font-weight);
+  background: transparent;
+  user-select: none;
+  overflow-x: hidden;
+}
+
+#root {
+  padding-bottom: 8px;
+}
+
+/* ----- rows (repository, group, file) ----------------------------------- */
+
+.row {
+  display: flex;
+  align-items: center;
+  height: var(--row-height);
+  line-height: var(--row-height);
+  padding-right: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  outline: none;
+}
+
+.row:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-list-hoverForeground);
+}
+
+.row.selected {
+  background: var(--vscode-list-inactiveSelectionBackground);
+  color: var(--vscode-list-inactiveSelectionForeground);
+}
+
+.row:focus-visible,
+.row.selected:focus-within {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+  outline: 1px solid var(--vscode-list-focusOutline);
+  outline-offset: -1px;
+}
+
+.twisty {
+  flex: none;
+  width: var(--twisty);
+  text-align: center;
+  font-size: 16px !important;
+  opacity: 0.85;
+}
+
+.icon {
+  flex: none;
+  width: 16px;
+  margin-right: 6px;
+  text-align: center;
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.desc {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: 0.5em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.7;
+  font-size: 0.92em;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* ----- hover actions ----------------------------------------------------- */
+
+.actions {
+  display: none;
+  flex: none;
+  align-items: center;
+  gap: 1px;
+  margin-left: 4px;
+}
+
+.row:hover .actions,
+.row:focus-within .actions,
+.row.selected .actions {
+  display: flex;
+}
+
+.actions.always {
+  display: flex;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.action:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+  outline: 1px dashed var(--vscode-toolbar-hoverOutline, transparent);
+}
+
+.action .codicon {
+  font-size: 16px;
+}
+
+/* ----- repository header -------------------------------------------------- */
+
+.repo {
+  margin-bottom: 2px;
+}
+
+.repo-row {
+  padding-left: 2px;
+  font-weight: 600;
+}
+
+.repo-row .desc {
+  font-weight: normal;
+}
+
+.repo-row .branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.repo-row .branch .codicon {
+  font-size: 13px;
+}
+
+.repo-row .sync-status {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  font-weight: normal;
+  font-size: 0.92em;
+  opacity: 0.85;
+}
+
+.repo-row .sync-status .codicon {
+  font-size: 13px;
+}
+
+.repo-row .sync-status .pair {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.graph-button {
+  color: var(--vscode-textLink-foreground);
+}
+
+/* ----- message box and primary button ----------------------------------- */
+
+.repo-body.collapsed {
+  display: none;
+}
+
+.input-wrap {
+  padding: 4px 12px 4px 20px;
+}
+
+textarea.message {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 26px;
+  max-height: 200px;
+  padding: 3px 6px;
+  resize: none;
+  overflow-y: auto;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  line-height: 18px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  border-radius: 2px;
+  outline: none;
+  user-select: text;
+}
+
+textarea.message::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+textarea.message:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.button-wrap {
+  padding: 2px 12px 6px 20px;
+}
+
+.primary {
+  display: flex;
+  height: 26px;
+  border-radius: 2px;
+  overflow: hidden;
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+  border: 1px solid var(--vscode-button-border, transparent);
+  box-sizing: border-box;
+}
+
+.primary .main,
+.primary .drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.primary .main {
+  flex: 1 1 auto;
+}
+
+.primary .drop {
+  flex: none;
+  width: 26px;
+  border-left: 1px solid var(--vscode-button-separator, rgba(255, 255, 255, 0.4));
+}
+
+.primary .main:hover,
+.primary .drop:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.primary .codicon {
+  font-size: 14px;
+}
+
+.primary.secondary {
+  color: var(--vscode-button-secondaryForeground);
+  background: var(--vscode-button-secondaryBackground);
+}
+
+.primary.secondary .main:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+/* ----- groups and files --------------------------------------------------- */
+
+.group-row {
+  padding-left: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: none;
+}
+
+.badge {
+  flex: none;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  box-sizing: border-box;
+  border-radius: 11px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: normal;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+}
+
+.file-row {
+  padding-left: 30px;
+}
+
+.file-row .letter {
+  flex: none;
+  width: 16px;
+  margin-left: 6px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.file-row.deleted .label {
+  text-decoration: line-through;
+}
+
+/* Status colors: the same theme colors as the Git file decorations. */
+.st-modified { color: var(--vscode-gitDecoration-modifiedResourceForeground); }
+.st-stage-modified { color: var(--vscode-gitDecoration-stageModifiedResourceForeground, var(--vscode-gitDecoration-modifiedResourceForeground)); }
+.st-added { color: var(--vscode-gitDecoration-addedResourceForeground); }
+.st-untracked { color: var(--vscode-gitDecoration-untrackedResourceForeground); }
+.st-deleted { color: var(--vscode-gitDecoration-deletedResourceForeground); }
+.st-stage-deleted { color: var(--vscode-gitDecoration-stageDeletedResourceForeground, var(--vscode-gitDecoration-deletedResourceForeground)); }
+.st-renamed { color: var(--vscode-gitDecoration-renamedResourceForeground); }
+.st-conflict { color: var(--vscode-gitDecoration-conflictingResourceForeground); }
+
+/* The file name takes the status color; the folder and icons keep the normal color. */
+.file-row .desc,
+.file-row .icon {
+  color: var(--vscode-foreground);
+}
+
+.row.selected .label,
+.row.selected .letter {
+  color: inherit;
+}
+
+/* ----- empty state ----------------------------------------------------------- */
+
+.empty {
+  padding: 10px 20px;
+  line-height: 1.5;
+}
+
+.empty p {
+  margin: 0 0 10px 0;
+}
+
+.empty .primary {
+  margin-bottom: 8px;
+}
+
+.hint {
+  opacity: 0.7;
+  font-size: 0.92em;
+}

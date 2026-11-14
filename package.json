@@ -334,145 +334,100 @@
           "group": "navigation@3"
         }
       ],
-      "view/item/context": [
+      "webview/context": [
         {
           "command": "multiRepoGraph.changedRepos.openGraph",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
-          "group": "inline@1"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.commit",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
-          "group": "inline@2"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.sync",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:(ahead|behind)/",
-          "group": "inline@3"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.push",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:unpublished/",
-          "group": "inline@4"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.openGraph",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "1_open@1"
         },
         {
           "command": "multiRepoGraph.changedRepos.openTerminal",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "1_open@2"
         },
         {
           "command": "multiRepoGraph.changedRepos.revealInExplorer",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "1_open@3"
         },
         {
           "command": "multiRepoGraph.changedRepos.commit",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "2_commit@1"
         },
         {
           "command": "multiRepoGraph.changedRepos.stageAll",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "2_commit@2"
         },
         {
           "command": "multiRepoGraph.changedRepos.unstageAll",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "2_commit@3"
         },
         {
           "command": "multiRepoGraph.changedRepos.discardAll",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "2_commit@4"
         },
         {
           "command": "multiRepoGraph.changedRepos.sync",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "3_sync@1"
         },
         {
           "command": "multiRepoGraph.changedRepos.pull",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "3_sync@2"
         },
         {
           "command": "multiRepoGraph.changedRepos.push",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "3_sync@3"
         },
         {
           "command": "multiRepoGraph.changedRepos.fetch",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'repo'",
           "group": "3_sync@4"
         },
         {
-          "command": "multiRepoGraph.changedRepos.commit",
-          "when": "view == multiRepoGraph.changedRepos && viewItem == message",
-          "group": "inline@1"
+          "command": "multiRepoGraph.changedRepos.stageGroup",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'group' && group != 'index'",
+          "group": "1_change@1"
         },
         {
           "command": "multiRepoGraph.changedRepos.unstageGroup",
-          "when": "view == multiRepoGraph.changedRepos && viewItem == group:index",
-          "group": "inline@1"
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'group' && group == 'index'",
+          "group": "1_change@1"
         },
         {
           "command": "multiRepoGraph.changedRepos.discardGroup",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^group:(workingTree|untracked)$/",
-          "group": "inline@1"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.stageGroup",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^group:(workingTree|untracked|merge)$/",
-          "group": "inline@2"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.openFile",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:/",
-          "group": "inline@1"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.unstageFile",
-          "when": "view == multiRepoGraph.changedRepos && viewItem == file:index",
-          "group": "inline@2"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.discardFile",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:(workingTree|untracked)$/",
-          "group": "inline@2"
-        },
-        {
-          "command": "multiRepoGraph.changedRepos.stageFile",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:(workingTree|untracked|merge)$/",
-          "group": "inline@3"
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'group' && group != 'index' && group != 'merge'",
+          "group": "1_change@2"
         },
         {
           "command": "multiRepoGraph.changedRepos.openChange",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection =~ /^file-/",
           "group": "1_open@1"
         },
         {
           "command": "multiRepoGraph.changedRepos.openFile",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection =~ /^file-/",
           "group": "1_open@2"
         },
         {
           "command": "multiRepoGraph.changedRepos.stageFile",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:(workingTree|untracked|merge)$/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection =~ /^file-(workingTree|untracked|merge)$/",
           "group": "2_change@1"
         },
         {
           "command": "multiRepoGraph.changedRepos.unstageFile",
-          "when": "view == multiRepoGraph.changedRepos && viewItem == file:index",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'file-index'",
           "group": "2_change@1"
         },
         {
           "command": "multiRepoGraph.changedRepos.discardFile",
-          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:(workingTree|untracked)$/",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection =~ /^file-(workingTree|untracked)$/",
           "group": "2_change@2"
         }
       ]
@@ -717,17 +672,12 @@
     "views": {
       "multiRepoGraph": [
         {
+          "type": "webview",
           "id": "multiRepoGraph.changedRepos",
           "name": "Changed Repos"
         }
       ]
-    },
-    "viewsWelcome": [
-      {
-        "view": "multiRepoGraph.changedRepos",
-        "contents": "All repositories are clean and in sync.\n[Show All Repositories](command:multiRepoGraph.changedRepos.showAll)\n[Fetch All Repositories](command:multiRepoGraph.changedRepos.fetchAll)\nRepositories inside other folders are found when \"git.repositoryScanMaxDepth\" is high enough."
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run build:prod",

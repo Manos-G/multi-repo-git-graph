@@ -1,14 +1,18 @@
+import * as crypto from 'crypto';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { GitStatus, type GitApi, type GitChange, type GitRepository } from './gitApi.js';
 
 /**
- * "Changed Repos" panel: a Source Control style view that lists only the
- * repositories that need attention (changed files, unpushed or unpulled
- * commits). Each repository shows the same groups as Source Control
- * (Merge Changes, Staged Changes, Changes) and supports commit, stage,
- * unstage, discard, push, pull and sync. Each repository also has a Git Graph
- * button that opens that repository in its own graph tab.
+ * "Changed Repos" panel.
+ *
+ * A webview view that copies the look and behavior of the Source Control view,
+ * but lists only the repositories that need attention (changed files, commits
+ * to push or pull). Each repository has a message box, a Commit / Sync /
+ * Publish button, the Merge / Staged / Changes groups, and a Git Graph button
+ * that opens the repository in its own graph tab.
+ *
+ * The page itself is plain HTML, CSS and JavaScript in resources/changed-repos.
  */
 
 const VIEW_ID = 'multiRepoGraph.changedRepos';
@@ -16,7 +20,7 @@ const CFG = 'multiRepoGraph.changedRepos';
 const CTX_SHOWING_ALL = 'multiRepoGraph.changedRepos.showingAll';
 
 type GroupKind = 'merge' | 'index' | 'workingTree' | 'untracked';
-
+const GROUP_ORDER: GroupKind[] = ['merge', 'index', 'workingTree', 'untracked'];
 const GROUP_LABEL: Record<GroupKind, string> = {
   merge: 'Merge Changes',
   index: 'Staged Changes',
@@ -36,9 +40,11 @@ function cfg() {
   };
 }
 
-function repoName(repo: GitRepository): string {
-  return path.basename(repo.rootUri.fsPath);
-}
+// ---------------------------------------------------------------------------
+// Repository helpers
+// ---------------------------------------------------------------------------
+
+const repoName = (repo: GitRepository) => path.basename(repo.rootUri.fsPath);
 
 function branchLabel(repo: GitRepository): string {
   const head = repo.state.HEAD;
@@ -49,23 +55,15 @@ function branchLabel(repo: GitRepository): string {
 
 function groupChanges(repo: GitRepository, kind: GroupKind): GitChange[] {
   const s = repo.state;
-  switch (kind) {
-    case 'merge':
-      return s.mergeChanges;
-    case 'index':
-      return s.indexChanges;
-    case 'workingTree':
-      return s.workingTreeChanges;
-    case 'untracked':
-      return s.untrackedChanges ?? [];
-  }
+  if (kind === 'merge') return s.mergeChanges;
+  if (kind === 'index') return s.indexChanges;
+  if (kind === 'workingTree') return s.workingTreeChanges;
+  return s.untrackedChanges ?? [];
 }
 
 function fileCount(repo: GitRepository): number {
   const paths = new Set<string>();
-  for (const kind of ['merge', 'index', 'workingTree', 'untracked'] as GroupKind[]) {
-    for (const ch of groupChanges(repo, kind)) paths.add(ch.uri.fsPath);
-  }
+  for (const g of GROUP_ORDER) for (const ch of groupChanges(repo, g)) paths.add(ch.uri.fsPath);
   return paths.size;
 }
 
@@ -80,107 +78,138 @@ function needsAttention(repo: GitRepository): boolean {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Tree nodes
-// ---------------------------------------------------------------------------
+const unstagedPaths = (repo: GitRepository) => [
+  ...repo.state.workingTreeChanges.map((c) => c.uri.fsPath),
+  ...(repo.state.untrackedChanges ?? []).map((c) => c.uri.fsPath),
+];
 
-class RepoNode extends vscode.TreeItem {
-  readonly kind = 'repo' as const;
-  constructor(readonly repo: GitRepository, isWorkspaceRoot: boolean) {
-    const files = fileCount(repo);
-    super(repoName(repo), files > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None);
-    const head = repo.state.HEAD;
-    const ahead = head?.ahead ?? 0;
-    const behind = head?.behind ?? 0;
-    const parts = [branchLabel(repo)];
-    if (ahead > 0 || behind > 0) parts.push(`${behind}↓ ${ahead}↑`);
-    if (head?.name && !head.upstream) parts.push('not published');
-    this.description = parts.join('  ');
-    this.tooltip = new vscode.MarkdownString(
-      [
-        `**${repoName(repo)}**${isWorkspaceRoot ? ' (workspace root)' : ''}`,
-        `\`${repo.rootUri.fsPath}\``,
-        `Branch: ${branchLabel(repo)}`,
-        `Changed files: ${files}`,
-        `Commits to push: ${ahead} · Commits to pull: ${behind}`,
-      ].join('\n\n'),
-    );
-    const conflicts = repo.state.mergeChanges.length > 0;
-    this.iconPath = new vscode.ThemeIcon(
-      conflicts ? 'warning' : 'repo',
-      conflicts
-        ? new vscode.ThemeColor('gitDecoration.conflictingResourceForeground')
-        : files > 0
-          ? new vscode.ThemeColor('gitDecoration.modifiedResourceForeground')
-          : undefined,
-    );
-    // Flags for the "when" clauses of the inline buttons in package.json.
-    const flags = ['repo'];
-    if (files > 0) flags.push('files');
-    if (ahead > 0) flags.push('ahead');
-    if (behind > 0) flags.push('behind');
-    if (head?.name && !head.upstream) flags.push('unpublished');
-    this.contextValue = flags.join(':');
-    this.id = `repo:${repo.rootUri.fsPath}`;
+/** Status letter and color class, the same as the Source Control view uses. */
+function statusInfo(status: number, group: GroupKind): { letter: string; cls: string; deleted: boolean } {
+  const S = GitStatus;
+  switch (status) {
+    case S.INDEX_MODIFIED:
+      return { letter: 'M', cls: 'st-stage-modified', deleted: false };
+    case S.MODIFIED:
+    case S.TYPE_CHANGED:
+      return { letter: status === S.TYPE_CHANGED ? 'T' : 'M', cls: 'st-modified', deleted: false };
+    case S.INDEX_ADDED:
+    case S.INTENT_TO_ADD:
+      return { letter: 'A', cls: 'st-added', deleted: false };
+    case S.INDEX_DELETED:
+      return { letter: 'D', cls: 'st-stage-deleted', deleted: true };
+    case S.DELETED:
+      return { letter: 'D', cls: 'st-deleted', deleted: true };
+    case S.INDEX_RENAMED:
+    case S.INTENT_TO_RENAME:
+      return { letter: 'R', cls: 'st-renamed', deleted: false };
+    case S.INDEX_COPIED:
+      return { letter: 'C', cls: 'st-added', deleted: false };
+    case S.UNTRACKED:
+      return { letter: 'U', cls: 'st-untracked', deleted: false };
+    default:
+      return { letter: group === 'merge' ? '!' : '?', cls: 'st-conflict', deleted: false };
   }
 }
 
-class MessageNode extends vscode.TreeItem {
-  readonly kind = 'message' as const;
-  constructor(readonly repo: GitRepository) {
-    const draft = repo.inputBox.value.trim();
-    super(draft ? draft.split('\n')[0] : `Message (Enter to commit on "${branchLabel(repo)}")`, vscode.TreeItemCollapsibleState.None);
-    this.iconPath = new vscode.ThemeIcon('edit');
-    this.description = draft ? 'click to edit and commit' : '';
-    this.tooltip = 'Write a commit message and commit';
-    this.contextValue = 'message';
-    this.id = `message:${repo.rootUri.fsPath}`;
-    this.command = { command: 'multiRepoGraph.changedRepos.commit', title: 'Commit', arguments: [this] };
-  }
-}
-
-class GroupNode extends vscode.TreeItem {
-  readonly kind = 'group' as const;
-  constructor(readonly repo: GitRepository, readonly group: GroupKind) {
-    super(GROUP_LABEL[group], vscode.TreeItemCollapsibleState.Expanded);
-    this.description = String(groupChanges(repo, group).length);
-    this.contextValue = `group:${group}`;
-    this.id = `group:${repo.rootUri.fsPath}:${group}`;
-  }
-}
-
-class FileNode extends vscode.TreeItem {
-  readonly kind = 'file' as const;
-  constructor(readonly repo: GitRepository, readonly group: GroupKind, readonly change: GitChange) {
-    super(change.uri, vscode.TreeItemCollapsibleState.None);
-    const rel = path.relative(repo.rootUri.fsPath, change.uri.fsPath);
-    const dir = path.dirname(rel);
-    this.label = path.basename(rel);
-    // The Git extension's file decorations add the status letter and color through resourceUri, as in Source Control.
-    this.description = dir === '.' ? '' : dir;
-    this.tooltip = rel;
-    this.contextValue = `file:${group}`;
-    this.id = `file:${repo.rootUri.fsPath}:${group}:${change.uri.fsPath}`;
-    this.command = { command: 'multiRepoGraph.changedRepos.openChange', title: 'Open Changes', arguments: [this] };
-  }
-}
-
-type Node = RepoNode | MessageNode | GroupNode | FileNode;
-
 // ---------------------------------------------------------------------------
-// Data provider
+// State sent to the page
 // ---------------------------------------------------------------------------
 
-class Provider implements vscode.TreeDataProvider<Node> {
-  private readonly emitter = new vscode.EventEmitter<Node | undefined | void>();
-  readonly onDidChangeTreeData = this.emitter.event;
+interface FileState {
+  path: string;
+  name: string;
+  dir: string;
+  letter: string;
+  cls: string;
+  deleted: boolean;
+}
+interface GroupState {
+  kind: GroupKind;
+  label: string;
+  files: FileState[];
+}
+interface RepoState {
+  path: string;
+  name: string;
+  branch: string;
+  ahead: number;
+  behind: number;
+  hasUpstream: boolean;
+  unpublished: boolean;
+  isWorkspaceRoot: boolean;
+  message: string;
+  fileCount: number;
+  groups: GroupState[];
+}
+interface ViewState {
+  repos: RepoState[];
+  total: number;
+  changed: number;
+  showAll: boolean;
+}
+
+function repoState(repo: GitRepository, root: string | undefined): RepoState {
+  const head = repo.state.HEAD;
+  const groups: GroupState[] = [];
+  for (const kind of GROUP_ORDER) {
+    const changes = groupChanges(repo, kind);
+    if (changes.length === 0) continue;
+    groups.push({
+      kind,
+      label: GROUP_LABEL[kind],
+      files: [...changes]
+        .sort((a, b) => a.uri.fsPath.localeCompare(b.uri.fsPath))
+        .map((c) => {
+          const rel = path.relative(repo.rootUri.fsPath, c.uri.fsPath);
+          const dir = path.dirname(rel);
+          return { path: c.uri.fsPath, name: path.basename(rel), dir: dir === '.' ? '' : dir, ...statusInfo(c.status, kind) };
+        }),
+    });
+  }
+  return {
+    path: repo.rootUri.fsPath,
+    name: repoName(repo),
+    branch: branchLabel(repo),
+    ahead: head?.ahead ?? 0,
+    behind: head?.behind ?? 0,
+    hasUpstream: !!head?.upstream,
+    unpublished: !!head?.name && !head.upstream,
+    isWorkspaceRoot: repo.rootUri.fsPath === root,
+    message: repo.inputBox.value,
+    fileCount: fileCount(repo),
+    groups,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// The panel
+// ---------------------------------------------------------------------------
+
+export interface ChangedReposDeps {
+  /** Opens the repository in its own graph tab (reveals the tab if it is already open). */
+  openGraph(repoRoot: vscode.Uri): Promise<void> | void;
+  log: vscode.LogOutputChannel;
+}
+
+/** Arguments that the right-click menus of the page pass to the commands (from data-vscode-context). */
+interface MenuContext {
+  repoPath?: string;
+  group?: GroupKind;
+  filePath?: string;
+}
+
+class ChangedReposPanel implements vscode.WebviewViewProvider {
+  private view: vscode.WebviewView | undefined;
   showAll = false;
 
-  constructor(private readonly git: GitApi) {}
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly git: GitApi,
+    private readonly deps: ChangedReposDeps,
+    private readonly onChange: () => void,
+  ) {}
 
-  refresh(): void {
-    this.emitter.fire();
-  }
+  // ----- data --------------------------------------------------------------
 
   sortedRepos(): GitRepository[] {
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -195,41 +224,351 @@ class Provider implements vscode.TreeDataProvider<Node> {
     return this.sortedRepos().filter(needsAttention);
   }
 
-  getTreeItem(node: Node): vscode.TreeItem {
-    return node;
+  findRepo(repoPath: string | undefined): GitRepository | undefined {
+    return repoPath ? this.git.repositories.find((r) => r.rootUri.fsPath === repoPath) : undefined;
   }
 
-  getChildren(node?: Node): Node[] {
-    if (!node) {
-      const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-      const repos = this.showAll ? this.sortedRepos() : this.changedRepos();
-      return repos.map((r) => new RepoNode(r, r.rootUri.fsPath === root));
+  findChange(repo: GitRepository, group: GroupKind | undefined, filePath: string | undefined): GitChange | undefined {
+    const groups = group ? [group] : GROUP_ORDER;
+    for (const g of groups) {
+      const ch = groupChanges(repo, g).find((c) => c.uri.fsPath === filePath);
+      if (ch) return ch;
     }
-    if (node instanceof RepoNode) {
-      if (fileCount(node.repo) === 0) return [];
-      const groups = (['merge', 'index', 'workingTree', 'untracked'] as GroupKind[])
-        .filter((g) => groupChanges(node.repo, g).length > 0)
-        .map((g) => new GroupNode(node.repo, g));
-      return [new MessageNode(node.repo), ...groups];
+    return undefined;
+  }
+
+  postState(): void {
+    if (!this.view) return;
+    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const changed = this.changedRepos();
+    const list = this.showAll ? this.sortedRepos() : changed;
+    const state: ViewState = {
+      repos: list.map((r) => repoState(r, root)),
+      total: this.git.repositories.length,
+      changed: changed.length,
+      showAll: this.showAll,
+    };
+    void this.view.webview.postMessage({ type: 'state', state });
+    this.view.badge = changed.length > 0 ? { value: changed.length, tooltip: `${changed.length} repositories need attention` } : undefined;
+    this.view.description = this.showAll ? `all ${state.total}` : `${changed.length} of ${state.total}`;
+  }
+
+  // ----- webview -----------------------------------------------------------
+
+  resolveWebviewView(view: vscode.WebviewView): void {
+    this.view = view;
+    const media = vscode.Uri.joinPath(this.context.extensionUri, 'resources');
+    view.webview.options = { enableScripts: true, localResourceRoots: [media] };
+    view.webview.html = this.html(view.webview, media);
+    view.webview.onDidReceiveMessage((m) => this.onMessage(m));
+    view.onDidChangeVisibility(() => view.visible && this.postState());
+    view.onDidDispose(() => (this.view = undefined));
+  }
+
+  private html(webview: vscode.Webview, media: vscode.Uri): string {
+    const nonce = crypto.randomBytes(16).toString('base64');
+    const uri = (...p: string[]) => webview.asWebviewUri(vscode.Uri.joinPath(media, ...p));
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="${uri('codicons', 'codicon.css')}">
+<link rel="stylesheet" href="${uri('changed-repos', 'view.css')}">
+</head>
+<body data-vscode-context='{"preventDefaultContextMenuItems": true}'>
+<div id="root"></div>
+<script nonce="${nonce}" src="${uri('changed-repos', 'view.js')}"></script>
+</body>
+</html>`;
+  }
+
+  private async onMessage(m: {
+    type: string;
+    action?: string;
+    repo?: string;
+    group?: GroupKind;
+    file?: string;
+    value?: string;
+    message?: string;
+  }): Promise<void> {
+    if (m.type === 'ready') return this.postState();
+    if (m.type === 'showAll') return this.setShowAll(true);
+    if (m.type === 'fetchAll') return void vscode.commands.executeCommand(`${CFG}.fetchAll`);
+    const repo = this.findRepo(m.repo);
+    if (!repo) return;
+    switch (m.type) {
+      case 'setMessage':
+        repo.inputBox.value = m.value ?? '';
+        return;
+      case 'commit':
+        return this.commit(repo, m.message ?? repo.inputBox.value, (m.action as CommitMode) ?? 'commit');
+      case 'commitMenu':
+        return this.commitMenu(repo, m.message ?? repo.inputBox.value);
+      case 'repoAction':
+        return this.repoAction(repo, m.action ?? '');
+      case 'groupAction':
+        return this.groupAction(repo, m.group, m.action ?? '');
+      case 'fileAction':
+        return this.fileAction(repo, m.group, m.file, m.action ?? '');
     }
-    if (node instanceof GroupNode) {
-      return [...groupChanges(node.repo, node.group)]
-        .sort((a, b) => a.uri.fsPath.localeCompare(b.uri.fsPath))
-        .map((c) => new FileNode(node.repo, node.group, c));
+  }
+
+  setShowAll(value: boolean): void {
+    this.showAll = value;
+    void vscode.commands.executeCommand('setContext', CTX_SHOWING_ALL, value);
+    this.postState();
+    this.onChange();
+  }
+
+  // ----- actions -----------------------------------------------------------
+
+  /** Runs a Git operation with a progress bar in the panel, and reports a failure the way Source Control does. */
+  async run(title: string, fn: () => Promise<unknown>): Promise<boolean> {
+    try {
+      await vscode.window.withProgress({ location: { viewId: VIEW_ID }, title }, fn);
+      return true;
+    } catch (err) {
+      const e = err as { stderr?: string; message?: string };
+      const msg = (e.stderr || e.message || String(err)).trim();
+      this.deps.log.error(`${title}: ${msg}`);
+      void vscode.window.showErrorMessage(`${title} failed: ${msg.split('\n')[0]}`);
+      return false;
     }
-    return [];
+  }
+
+  private async confirmDiscard(what: string, untracked: number): Promise<boolean> {
+    if (!cfg().confirmDiscard) return true;
+    const extra = untracked > 0 ? ` ${untracked} untracked file(s) will be deleted.` : '';
+    const answer = await vscode.window.showWarningMessage(
+      `Are you sure you want to discard ${what}?${extra} This cannot be undone.`,
+      { modal: true },
+      'Discard',
+    );
+    return answer === 'Discard';
+  }
+
+  async commit(repo: GitRepository, message: string, mode: CommitMode): Promise<void> {
+    const name = repoName(repo);
+    if (!message.trim()) {
+      void vscode.window.showWarningMessage(`${name}: write a commit message first.`);
+      return;
+    }
+    if (repo.state.mergeChanges.length > 0 && repo.state.indexChanges.length === 0) {
+      void vscode.window.showWarningMessage(`${name}: resolve the merge conflicts and stage the files first.`);
+      return;
+    }
+    repo.inputBox.value = message;
+
+    let stageFirst = false;
+    if (repo.state.indexChanges.length === 0) {
+      const unstaged = unstagedPaths(repo);
+      if (unstaged.length === 0) {
+        void vscode.window.showInformationMessage(`${name}: there are no changes to commit.`);
+        return;
+      }
+      const smart = cfg().smartCommit;
+      if (smart === 'never') {
+        void vscode.window.showInformationMessage(`${name}: there are no staged changes. Stage files first.`);
+        return;
+      }
+      if (smart === 'ask') {
+        const answer = await vscode.window.showWarningMessage(
+          `There are no staged changes to commit in ${name}. Do you want to stage all your changes and commit them directly?`,
+          { modal: true },
+          'Yes',
+          'Always',
+        );
+        if (!answer) return;
+        if (answer === 'Always') await vscode.workspace.getConfiguration(CFG).update('smartCommit', 'always', vscode.ConfigurationTarget.Global);
+      }
+      stageFirst = true;
+    }
+
+    const ok = await this.run(`Committing in ${name}`, async () => {
+      if (stageFirst) await repo.add(unstagedPaths(repo));
+      await repo.commit(message);
+      repo.inputBox.value = '';
+    });
+    if (!ok) return;
+    void this.view?.webview.postMessage({ type: 'committed', repo: repo.rootUri.fsPath });
+    if (mode === 'commitPush') await this.push(repo);
+    if (mode === 'commitSync') await this.sync(repo);
+  }
+
+  private async commitMenu(repo: GitRepository, message: string): Promise<void> {
+    const items: (vscode.QuickPickItem & { mode: CommitMode })[] = [
+      { label: '$(check) Commit', mode: 'commit' },
+      { label: '$(arrow-up) Commit & Push', mode: 'commitPush' },
+      { label: '$(sync) Commit & Sync', mode: 'commitSync' },
+    ];
+    const pick = await vscode.window.showQuickPick(items, { title: `Commit in ${repoName(repo)}` });
+    if (pick) await this.commit(repo, message, pick.mode);
+  }
+
+  async push(repo: GitRepository): Promise<void> {
+    const head = repo.state.HEAD;
+    if (head?.name && !head.upstream) {
+      // Same as "Publish Branch" in Source Control: push and set the upstream on "origin".
+      await this.run(`Publishing ${repoName(repo)}`, () => repo.push('origin', head.name, true));
+      return;
+    }
+    await this.run(`Pushing ${repoName(repo)}`, () => repo.push());
+  }
+
+  async sync(repo: GitRepository): Promise<void> {
+    const head = repo.state.HEAD;
+    if (head?.name && !head.upstream) return this.push(repo);
+    await this.run(`Syncing ${repoName(repo)}`, async () => {
+      if ((repo.state.HEAD?.behind ?? 0) > 0) await repo.pull();
+      if ((repo.state.HEAD?.ahead ?? 0) > 0) await repo.push();
+    });
+  }
+
+  async repoAction(repo: GitRepository, action: string): Promise<void> {
+    const name = repoName(repo);
+    switch (action) {
+      case 'openGraph':
+        await this.deps.openGraph(repo.rootUri);
+        return;
+      case 'sync':
+        return this.sync(repo);
+      case 'publish':
+      case 'push':
+        return this.push(repo);
+      case 'pull':
+        await this.run(`Pulling ${name}`, () => repo.pull());
+        return;
+      case 'fetch':
+        await this.run(`Fetching ${name}`, () => repo.fetch());
+        return;
+      case 'refresh':
+        await this.run(`Refreshing ${name}`, () => repo.status());
+        return;
+      case 'stageAll':
+        await this.run(`Staging in ${name}`, () => repo.add(unstagedPaths(repo)));
+        return;
+      case 'unstageAll':
+        await this.run(`Unstaging in ${name}`, () => repo.revert(repo.state.indexChanges.map((c) => c.uri.fsPath)));
+        return;
+      case 'discardAll': {
+        const paths = unstagedPaths(repo);
+        if (paths.length === 0) return;
+        const untracked = [...repo.state.workingTreeChanges, ...(repo.state.untrackedChanges ?? [])].filter((c) => c.status === GitStatus.UNTRACKED).length;
+        if (await this.confirmDiscard(`all ${paths.length} changes in ${name}`, untracked)) {
+          await this.run(`Discarding in ${name}`, () => repo.clean(paths));
+        }
+        return;
+      }
+      case 'terminal':
+        vscode.window.createTerminal({ name, cwd: repo.rootUri }).show();
+        return;
+      case 'reveal':
+        await vscode.commands.executeCommand('revealInExplorer', repo.rootUri);
+        return;
+      case 'more': {
+        const items: (vscode.QuickPickItem & { action?: string })[] = [
+          { label: '$(git-branch) Open Git Graph', action: 'openGraph' },
+          { label: 'Changes', kind: vscode.QuickPickItemKind.Separator },
+          { label: '$(add) Stage All Changes', action: 'stageAll' },
+          { label: '$(remove) Unstage All Changes', action: 'unstageAll' },
+          { label: '$(discard) Discard All Changes', action: 'discardAll' },
+          { label: 'Remote', kind: vscode.QuickPickItemKind.Separator },
+          { label: '$(sync) Sync', action: 'sync' },
+          { label: '$(arrow-down) Pull', action: 'pull' },
+          { label: '$(arrow-up) Push', action: 'push' },
+          { label: '$(cloud-download) Fetch', action: 'fetch' },
+          { label: 'Other', kind: vscode.QuickPickItemKind.Separator },
+          { label: '$(terminal) Open in Terminal', action: 'terminal' },
+          { label: '$(folder-opened) Reveal in Explorer View', action: 'reveal' },
+        ];
+        const pick = await vscode.window.showQuickPick(items, { title: `${name} (${branchLabel(repo)})` });
+        if (pick?.action) await this.repoAction(repo, pick.action);
+        return;
+      }
+    }
+  }
+
+  async groupAction(repo: GitRepository, group: GroupKind | undefined, action: string): Promise<void> {
+    if (!group) return;
+    const name = repoName(repo);
+    const changes = groupChanges(repo, group);
+    const paths = changes.map((c) => c.uri.fsPath);
+    if (action === 'stage') await this.run(`Staging in ${name}`, () => repo.add(paths));
+    if (action === 'unstage') await this.run(`Unstaging in ${name}`, () => repo.revert(paths));
+    if (action === 'discard') {
+      const untracked = changes.filter((c) => c.status === GitStatus.UNTRACKED).length;
+      if (await this.confirmDiscard(`${paths.length} changes in ${name}`, untracked)) {
+        await this.run(`Discarding in ${name}`, () => repo.clean(paths));
+      }
+    }
+  }
+
+  async fileAction(repo: GitRepository, group: GroupKind | undefined, filePath: string | undefined, action: string): Promise<void> {
+    const change = this.findChange(repo, group, filePath);
+    if (!change || !group) return;
+    const name = repoName(repo);
+    const file = path.basename(change.uri.fsPath);
+    switch (action) {
+      case 'open':
+        return this.openChange(repo, group, change);
+      case 'openFile':
+        await vscode.commands.executeCommand('vscode.open', change.uri);
+        return;
+      case 'stage':
+        await this.run(`Staging ${file}`, () => repo.add([change.uri.fsPath]));
+        return;
+      case 'unstage':
+        await this.run(`Unstaging ${file}`, () => repo.revert([change.uri.fsPath]));
+        return;
+      case 'discard': {
+        const untracked = change.status === GitStatus.UNTRACKED ? 1 : 0;
+        const what = untracked ? `the untracked file "${file}" in ${name}` : `changes in "${file}" in ${name}`;
+        if (await this.confirmDiscard(what, 0)) await this.run(`Discarding ${file}`, () => repo.clean([change.uri.fsPath]));
+        return;
+      }
+    }
+  }
+
+  /** Opens the same diff as Source Control: staged = HEAD ↔ index; unstaged = index (or HEAD) ↔ file on disk. */
+  async openChange(repo: GitRepository, group: GroupKind, change: GitChange): Promise<void> {
+    const git = this.git;
+    const name = path.basename(change.uri.fsPath);
+    const st = change.status;
+    const open = (uri: vscode.Uri) => vscode.commands.executeCommand('vscode.open', uri);
+    const diff = (left: vscode.Uri, right: vscode.Uri, title: string) => vscode.commands.executeCommand('vscode.diff', left, right, title);
+    if (group === 'index') {
+      if (st === GitStatus.INDEX_ADDED || st === GitStatus.INTENT_TO_ADD) {
+        await open(git.toGitUri(change.uri, ''));
+      } else if (st === GitStatus.INDEX_DELETED) {
+        await open(git.toGitUri(change.originalUri, 'HEAD'));
+      } else {
+        await diff(git.toGitUri(change.originalUri, 'HEAD'), git.toGitUri(change.uri, ''), `${name} (Index)`);
+      }
+      return;
+    }
+    if (st === GitStatus.UNTRACKED || st === GitStatus.INTENT_TO_ADD || group === 'merge') {
+      await open(change.uri);
+    } else if (st === GitStatus.DELETED) {
+      await open(git.toGitUri(change.originalUri, '~'));
+    } else {
+      await diff(git.toGitUri(change.originalUri, '~'), change.uri, `${name} (Working Tree) — ${repoName(repo)}`);
+    }
+  }
+
+  // ----- commands used by the right-click menus and the view title ---------
+
+  menuRepo(ctx: MenuContext | undefined): GitRepository | undefined {
+    return this.findRepo(ctx?.repoPath);
   }
 }
+
+type CommitMode = 'commit' | 'commitPush' | 'commitSync';
 
 // ---------------------------------------------------------------------------
 // Registration
 // ---------------------------------------------------------------------------
-
-export interface ChangedReposDeps {
-  /** Opens the repository in its own graph tab (reveals the tab if it is already open). */
-  openGraph(repoRoot: vscode.Uri): Promise<void> | void;
-  log: vscode.LogOutputChannel;
-}
 
 async function getGitApi(log: vscode.LogOutputChannel): Promise<GitApi | undefined> {
   const ext = vscode.extensions.getExtension<{ enabled: boolean; getAPI(v: 1): GitApi }>('vscode.git');
@@ -249,17 +588,13 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
   const git = await getGitApi(deps.log);
   if (!git) return;
 
-  const provider = new Provider(git);
-  const view = vscode.window.createTreeView(VIEW_ID, { treeDataProvider: provider, showCollapseAll: true });
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 49);
   statusBar.command = 'workbench.view.extension.multiRepoGraph';
-  context.subscriptions.push(view, statusBar);
+  context.subscriptions.push(statusBar);
 
-  const updateChrome = () => {
-    const changed = provider.changedRepos().length;
+  const updateStatusBar = () => {
+    const changed = panel.changedRepos().length;
     const total = git.repositories.length;
-    view.badge = changed > 0 ? { value: changed, tooltip: `${changed} of ${total} repositories need attention` } : undefined;
-    view.description = provider.showAll ? `all ${total}` : `${changed} of ${total}`;
     if (cfg().showStatusBar && total > 0) {
       statusBar.text = changed > 0 ? `$(repo) ${changed} changed` : '$(repo) all clean';
       statusBar.tooltip = `${changed} of ${total} repositories have changed files or commits to push or pull`;
@@ -269,17 +604,21 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
     }
   };
 
-  // Many repositories can report a change at the same moment, so redraw at most every 250 ms.
+  const panel = new ChangedReposPanel(context, git, deps, updateStatusBar);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(VIEW_ID, panel, { webviewOptions: { retainContextWhenHidden: true } }),
+  );
+
+  // Many repositories can report a change at the same moment, so redraw at most every 200 ms.
   let timer: ReturnType<typeof setTimeout> | undefined;
   const schedule = () => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = undefined;
-      provider.refresh();
-      updateChrome();
-    }, 250);
+      panel.postState();
+      updateStatusBar();
+    }, 200);
   };
-
   const watched = new Map<GitRepository, vscode.Disposable>();
   const watch = (repo: GitRepository) => {
     if (!watched.has(repo)) watched.set(repo, repo.state.onDidChange(schedule));
@@ -296,69 +635,18 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
     { dispose: () => watched.forEach((d) => d.dispose()) },
     vscode.workspace.onDidChangeConfiguration((e) => e.affectsConfiguration(CFG) && schedule()),
   );
+  void vscode.commands.executeCommand('setContext', CTX_SHOWING_ALL, false);
 
-  const setShowAll = (value: boolean) => {
-    provider.showAll = value;
-    void vscode.commands.executeCommand('setContext', CTX_SHOWING_ALL, value);
-    provider.refresh();
-    updateChrome();
-  };
-  setShowAll(false);
+  const reg = (id: string, fn: (ctx?: MenuContext) => unknown) =>
+    context.subscriptions.push(vscode.commands.registerCommand(`${CFG}.${id}`, fn));
 
-  // -------------------------------------------------------------------------
-  // Helpers
-  // -------------------------------------------------------------------------
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- command arguments come from VS Code menus (tree nodes, selections)
-  const reg = (id: string, fn: (...args: any[]) => unknown) =>
-    context.subscriptions.push(vscode.commands.registerCommand(`multiRepoGraph.changedRepos.${id}`, fn));
-
-  /** Runs a Git operation and shows any failure the way Source Control does. */
-  const run = async (title: string, fn: () => Promise<unknown>) => {
-    try {
-      await vscode.window.withProgress({ location: { viewId: VIEW_ID }, title }, fn);
-    } catch (err) {
-      const msg = (err as { stderr?: string; message?: string }).stderr || (err as Error).message || String(err);
-      deps.log.error(`${title}: ${msg}`);
-      void vscode.window.showErrorMessage(`${title} failed: ${msg.trim().split('\n')[0]}`);
-    }
-  };
-
-  /** Files the command applies to: the clicked file plus any other selected files of the same repo and group. */
-  const filesFor = (node: FileNode, selected?: Node[]): FileNode[] => {
-    const all = selected && selected.length > 0 ? selected : [node];
-    return all.filter((n): n is FileNode => n instanceof FileNode && n.repo === node.repo && n.group === node.group);
-  };
-
-  const repoOf = (node?: Node): GitRepository | undefined => node?.repo;
-
-  const allWorkingPaths = (repo: GitRepository) => [
-    ...repo.state.workingTreeChanges.map((c) => c.uri.fsPath),
-    ...(repo.state.untrackedChanges ?? []).map((c) => c.uri.fsPath),
-  ];
-
-  const confirmDiscard = async (label: string, untracked: number): Promise<boolean> => {
-    if (!cfg().confirmDiscard) return true;
-    const extra = untracked > 0 ? ` ${untracked} untracked file(s) will be DELETED.` : '';
-    const answer = await vscode.window.showWarningMessage(
-      `Are you sure you want to discard ${label}?${extra} This cannot be undone.`,
-      { modal: true },
-      'Discard',
-    );
-    return answer === 'Discard';
-  };
-
-  // -------------------------------------------------------------------------
-  // View commands
-  // -------------------------------------------------------------------------
-
-  reg('showAll', () => setShowAll(true));
-  reg('showChangedOnly', () => setShowAll(false));
-  reg('refresh', () => run('Refreshing repositories', () => Promise.all(git.repositories.map((r) => r.status()))));
+  // View title buttons.
+  reg('showAll', () => panel.setShowAll(true));
+  reg('showChangedOnly', () => panel.setShowAll(false));
+  reg('refresh', () => panel.run('Refreshing repositories', () => Promise.all(git.repositories.map((r) => r.status()))));
   reg('fetchAll', () =>
-    run('Fetching all repositories', async () => {
-      const repos = git.repositories.filter((r) => !!r.state.HEAD?.upstream);
-      const queue = [...repos];
+    panel.run('Fetching all repositories', async () => {
+      const queue = git.repositories.filter((r) => !!r.state.HEAD?.upstream);
       const failures: string[] = [];
       const worker = async () => {
         for (let r = queue.shift(); r; r = queue.shift()) {
@@ -376,179 +664,42 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
     }),
   );
 
-  // -------------------------------------------------------------------------
-  // Repository commands
-  // -------------------------------------------------------------------------
-
-  reg('openGraph', (node: Node) => {
-    const repo = repoOf(node);
-    return repo ? deps.openGraph(repo.rootUri) : undefined;
-  });
-
-  reg('commit', async (node: Node) => {
-    const repo = repoOf(node);
-    if (!repo) return;
-    if (repo.state.mergeChanges.length > 0 && repo.state.indexChanges.length === 0) {
-      void vscode.window.showWarningMessage(`${repoName(repo)}: resolve the merge conflicts and stage the files first.`);
-      return;
-    }
-    const message = await vscode.window.showInputBox({
-      title: `Commit in ${repoName(repo)} on "${branchLabel(repo)}"`,
-      value: repo.inputBox.value,
-      placeHolder: 'Commit message',
-      prompt: 'The message is also kept as the draft in Source Control.',
-      ignoreFocusOut: true,
-      validateInput: (v) => (v.trim() ? undefined : 'Enter a commit message.'),
+  // Right-click menu commands. VS Code passes the row's data-vscode-context object.
+  const repoCmd = (id: string, action: string) =>
+    reg(id, (ctx) => {
+      const repo = panel.menuRepo(ctx);
+      return repo ? panel.repoAction(repo, action) : undefined;
     });
-    if (message === undefined) return;
-    repo.inputBox.value = message; // keep the draft, in case the commit fails
-
-    let stageFirst = false;
-    if (repo.state.indexChanges.length === 0) {
-      const working = allWorkingPaths(repo);
-      if (working.length === 0) {
-        void vscode.window.showInformationMessage(`${repoName(repo)}: there are no changes to commit.`);
-        return;
-      }
-      const mode = cfg().smartCommit;
-      if (mode === 'never') {
-        void vscode.window.showInformationMessage(`${repoName(repo)}: there are no staged changes. Stage files first.`);
-        return;
-      }
-      if (mode === 'ask') {
-        const answer = await vscode.window.showWarningMessage(
-          `There are no staged changes in ${repoName(repo)}. Stage all ${working.length} changes and commit them?`,
-          { modal: true },
-          'Yes',
-          'Always',
-        );
-        if (!answer) return;
-        if (answer === 'Always') await vscode.workspace.getConfiguration(CFG).update('smartCommit', 'always', vscode.ConfigurationTarget.Global);
-      }
-      stageFirst = true;
-    }
-
-    await run(`Committing in ${repoName(repo)}`, async () => {
-      if (stageFirst) await repo.add(allWorkingPaths(repo));
-      await repo.commit(message);
-      repo.inputBox.value = '';
+  repoCmd('openGraph', 'openGraph');
+  repoCmd('sync', 'sync');
+  repoCmd('pull', 'pull');
+  repoCmd('push', 'push');
+  repoCmd('fetch', 'fetch');
+  repoCmd('stageAll', 'stageAll');
+  repoCmd('unstageAll', 'unstageAll');
+  repoCmd('discardAll', 'discardAll');
+  repoCmd('openTerminal', 'terminal');
+  repoCmd('revealInExplorer', 'reveal');
+  reg('commit', (ctx) => {
+    const repo = panel.menuRepo(ctx);
+    return repo ? panel.commit(repo, repo.inputBox.value, 'commit') : undefined;
+  });
+  const groupCmd = (id: string, action: string) =>
+    reg(id, (ctx) => {
+      const repo = panel.menuRepo(ctx);
+      return repo ? panel.groupAction(repo, ctx?.group, action) : undefined;
     });
-  });
-
-  reg('stageAll', (node: Node) => {
-    const repo = repoOf(node);
-    return repo ? run(`Staging all in ${repoName(repo)}`, () => repo.add(allWorkingPaths(repo))) : undefined;
-  });
-  reg('unstageAll', (node: Node) => {
-    const repo = repoOf(node);
-    return repo ? run(`Unstaging all in ${repoName(repo)}`, () => repo.revert(repo.state.indexChanges.map((c) => c.uri.fsPath))) : undefined;
-  });
-  reg('discardAll', async (node: Node) => {
-    const repo = repoOf(node);
-    if (!repo) return;
-    const untracked = [...repo.state.workingTreeChanges, ...(repo.state.untrackedChanges ?? [])].filter(
-      (c) => c.status === GitStatus.UNTRACKED,
-    ).length;
-    const count = allWorkingPaths(repo).length;
-    if (count === 0) return;
-    if (await confirmDiscard(`ALL ${count} unstaged changes in ${repoName(repo)}`, untracked)) {
-      await run(`Discarding changes in ${repoName(repo)}`, () => repo.clean(allWorkingPaths(repo)));
-    }
-  });
-
-  reg('push', (node: Node) => {
-    const repo = repoOf(node);
-    if (!repo) return;
-    const head = repo.state.HEAD;
-    if (head?.name && !head.upstream) {
-      // Same as "Publish Branch" in Source Control: push and set the upstream on the first remote ("origin").
-      return run(`Publishing ${repoName(repo)}`, () => repo.push('origin', head.name, true));
-    }
-    return run(`Pushing ${repoName(repo)}`, () => repo.push());
-  });
-  reg('pull', (node: Node) => {
-    const repo = repoOf(node);
-    return repo ? run(`Pulling ${repoName(repo)}`, () => repo.pull()) : undefined;
-  });
-  reg('sync', (node: Node) => {
-    const repo = repoOf(node);
-    if (!repo) return;
-    return run(`Syncing ${repoName(repo)}`, async () => {
-      if ((repo.state.HEAD?.behind ?? 0) > 0) await repo.pull();
-      if ((repo.state.HEAD?.ahead ?? 0) > 0) await repo.push();
+  groupCmd('stageGroup', 'stage');
+  groupCmd('unstageGroup', 'unstage');
+  groupCmd('discardGroup', 'discard');
+  const fileCmd = (id: string, action: string) =>
+    reg(id, (ctx) => {
+      const repo = panel.menuRepo(ctx);
+      return repo ? panel.fileAction(repo, ctx?.group, ctx?.filePath, action) : undefined;
     });
-  });
-  reg('fetch', (node: Node) => {
-    const repo = repoOf(node);
-    return repo ? run(`Fetching ${repoName(repo)}`, () => repo.fetch()) : undefined;
-  });
-  reg('openTerminal', (node: Node) => {
-    const repo = repoOf(node);
-    if (!repo) return;
-    vscode.window.createTerminal({ name: repoName(repo), cwd: repo.rootUri }).show();
-  });
-  reg('revealInExplorer', (node: Node) => {
-    const repo = repoOf(node);
-    if (repo) void vscode.commands.executeCommand('revealInExplorer', repo.rootUri);
-  });
-
-  // -------------------------------------------------------------------------
-  // Group commands
-  // -------------------------------------------------------------------------
-
-  reg('stageGroup', (node: GroupNode) =>
-    run(`Staging in ${repoName(node.repo)}`, () => node.repo.add(groupChanges(node.repo, node.group).map((c) => c.uri.fsPath))),
-  );
-  reg('unstageGroup', (node: GroupNode) =>
-    run(`Unstaging in ${repoName(node.repo)}`, () => node.repo.revert(groupChanges(node.repo, node.group).map((c) => c.uri.fsPath))),
-  );
-  reg('discardGroup', async (node: GroupNode) => {
-    const changes = groupChanges(node.repo, node.group);
-    const untracked = changes.filter((c) => c.status === GitStatus.UNTRACKED).length;
-    if (await confirmDiscard(`${changes.length} changes in ${repoName(node.repo)}`, untracked)) {
-      await run(`Discarding in ${repoName(node.repo)}`, () => node.repo.clean(changes.map((c) => c.uri.fsPath)));
-    }
-  });
-
-  // -------------------------------------------------------------------------
-  // File commands (they also apply to the other selected files of the same group)
-  // -------------------------------------------------------------------------
-
-  reg('stageFile', (node: FileNode, selected?: Node[]) => {
-    const files = filesFor(node, selected);
-    return run(`Staging in ${repoName(node.repo)}`, () => node.repo.add(files.map((f) => f.change.uri.fsPath)));
-  });
-  reg('unstageFile', (node: FileNode, selected?: Node[]) => {
-    const files = filesFor(node, selected);
-    return run(`Unstaging in ${repoName(node.repo)}`, () => node.repo.revert(files.map((f) => f.change.uri.fsPath)));
-  });
-  reg('discardFile', async (node: FileNode, selected?: Node[]) => {
-    const files = filesFor(node, selected);
-    const untracked = files.filter((f) => f.change.status === GitStatus.UNTRACKED).length;
-    const label = files.length === 1 ? `changes in "${path.basename(node.change.uri.fsPath)}"` : `changes in ${files.length} files`;
-    if (await confirmDiscard(label, untracked)) {
-      await run(`Discarding in ${repoName(node.repo)}`, () => node.repo.clean(files.map((f) => f.change.uri.fsPath)));
-    }
-  });
-  reg('openFile', (node: FileNode) => vscode.commands.executeCommand('vscode.open', node.change.uri));
-
-  reg('openChange', async (node: FileNode) => {
-    const { change, group, repo } = node;
-    const name = path.basename(change.uri.fsPath);
-    const st = change.status;
-    const open = (uri: vscode.Uri, title: string) => vscode.commands.executeCommand('vscode.open', uri, {}, title);
-    const diff = (left: vscode.Uri, right: vscode.Uri, title: string) => vscode.commands.executeCommand('vscode.diff', left, right, title);
-
-    // Same sides as Source Control:
-    // staged: HEAD <-> index ("" ref); unstaged: index-or-HEAD ("~" ref) <-> file on disk.
-    if (group === 'index') {
-      if (st === GitStatus.INDEX_ADDED || st === GitStatus.INTENT_TO_ADD) return open(git.toGitUri(change.uri, ''), `${name} (Index)`);
-      if (st === GitStatus.INDEX_DELETED) return open(git.toGitUri(change.originalUri, 'HEAD'), `${name} (Deleted)`);
-      return diff(git.toGitUri(change.originalUri, 'HEAD'), git.toGitUri(change.uri, ''), `${name} (Index)`);
-    }
-    if (st === GitStatus.UNTRACKED || st === GitStatus.INTENT_TO_ADD) return open(change.uri, `${name} (Untracked)`);
-    if (st === GitStatus.DELETED) return open(git.toGitUri(change.originalUri, '~'), `${name} (Deleted)`);
-    if (group === 'merge') return vscode.commands.executeCommand('vscode.open', change.uri);
-    return diff(git.toGitUri(change.originalUri, '~'), change.uri, `${name} (Working Tree) — ${repoName(repo)}`);
-  });
+  fileCmd('openChange', 'open');
+  fileCmd('openFile', 'openFile');
+  fileCmd('stageFile', 'stage');
+  fileCmd('unstageFile', 'unstage');
+  fileCmd('discardFile', 'discard');
 }

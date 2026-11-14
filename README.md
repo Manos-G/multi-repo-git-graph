@@ -13,15 +13,15 @@ The panel has its own icon in the Activity Bar. It shows only the repositories t
 
 Clean repositories are not shown. The status bar shows the number of changed repositories.
 
-The panel works like the Source Control view:
+The panel looks and works like the Source Control view. For each repository it shows:
 
-| Item | Buttons and actions |
-|---|---|
-| Repository | **Open Git Graph** (each repository opens in its own graph tab), **Commit**, **Sync Changes**, **Publish**. Right-click for Stage All, Unstage All, Discard All, Pull, Push, Fetch, Open in Terminal. |
-| Message row | Click to write the commit message and commit. The message is shared with the draft in Source Control. |
-| Staged Changes | Unstage all. For each file: Open File, Unstage. |
-| Changes | Stage all, Discard all. For each file: Open File, Stage, Discard. |
-| File | Click to see the diff, the same as in Source Control. |
+- A header with the repository name, the branch, the commits to pull (↓) and push (↑), and an **Open Git Graph** button. Each repository opens in its own graph tab.
+- A message box. Press **Ctrl+Enter** to commit. The message is shared with the draft in Source Control.
+- The **Commit** button. Its arrow has Commit & Push and Commit & Sync. When there is nothing to commit, the button changes to **Sync Changes** or **Publish Branch**.
+- The **Merge Changes**, **Staged Changes** and **Changes** groups with the number of files.
+- Buttons that show when you move the pointer over a row: stage, unstage, discard and open the file.
+- Click a file to see the diff, the same as in Source Control.
+- Right-click a repository, a group or a file for more actions (Pull, Push, Fetch, Open in Terminal and more).
 
 The buttons at the top of the panel fetch all repositories, refresh the list, and show all repositories.
 
@@ -56,6 +56,8 @@ The panel uses the repository list of the built-in Git extension. If your reposi
 ## License
 
 MIT. The original Speedy Git copyright notice is kept in [LICENSE.md](LICENSE.md).
+
+The panel uses [Codicons](https://github.com/microsoft/vscode-codicons) by Microsoft (icons: CC BY 4.0, code: MIT). See `resources/codicons`.
 
 ---
 
