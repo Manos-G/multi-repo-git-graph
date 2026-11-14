@@ -29,3 +29,5 @@ pnpm-lock.yaml
 !dist/**
 **/*.map
 dist/extension.js.map
+.github/**
+RELEASING.md
