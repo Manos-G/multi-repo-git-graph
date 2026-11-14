@@ -357,6 +357,8 @@ export type ResponseMessage =
   | { type: 'uncommittedChanges'; payload: UncommittedSummary }
   | { type: 'conflictState'; payload: ConflictState }
   | { type: 'initialData'; payload: InitialDataPayload }
+  /** Select a commit (the combined graph's "Open in <repository> graph"). Posted only after initialData. */
+  | { type: 'revealCommit'; payload: { hash: string } }
   // Compare refs (042-compare-refs)
   | { type: 'compareResult'; payload: { requestId: string; result: CompareResult } }
   | { type: 'compareError'; payload: { requestId: string; error: GitError | { message: string } } }
@@ -424,6 +426,7 @@ const RESPONSE_TYPES: Record<ResponseMessage['type'], true> = {
   initialData: true,
   compareResult: true, compareError: true,
   peerActivity: true,
+  revealCommit: true,
 };
 
 export function isRequestMessage(msg: Message): msg is RequestMessage {

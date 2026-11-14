@@ -132,7 +132,7 @@ export function decideHeadContinuation(context: HeadContinuationContext): HeadCo
  * toolbar "Go to HEAD" and the details panel's "Go to parent/child commit";
  * only the wording of the outcomes differs.
  */
-export type CommitNavigationTarget = 'head' | 'parent' | 'child';
+export type CommitNavigationTarget = 'head' | 'parent' | 'child' | 'commit';
 
 type NavigationMessageKind = 'notInView' | 'unresolved' | 'unreachable';
 
@@ -161,6 +161,8 @@ export const COMMIT_NAVIGATION_MESSAGES: Record<CommitNavigationTarget, Record<N
   head: HEAD_NAVIGATION_MESSAGES,
   parent: relatedCommitMessages('parent'),
   child: relatedCommitMessages('child'),
+  // "Open in <repository> graph" from the combined graph: a commit named by hash.
+  commit: navigationMessages('selected', 'Could not find the selected commit in this repository. Refresh and try again.'),
 };
 
 /** Webview-side state for a parent/child navigation, before asking the backend. */
