@@ -5,7 +5,7 @@ Complete annotated file map of the codebase. **This file is not loaded into agen
 explicitly pointed at it.
 
 > **Accuracy warning.** This map drifts whenever files are added, renamed, or deleted. It was
-> last reconciled against the filesystem on **2026-11-12**. If an entry here disagrees with the
+> last reconciled against the filesystem on **2026-11-14**. If an entry here disagrees with the
 > filesystem, the filesystem wins — verify with `Glob`/`find` before relying on it.
 
 For the architecture that *doesn't* change file-by-file — data flow, RPC conventions, telemetry
@@ -17,8 +17,9 @@ policy, performance invariants — see `CLAUDE.md`.
 
 ```
 src/
-├── extension.ts                  # Entry point; telemetry service, the git-show content provider (registered once
-│                                 #   for the window), speedyGit.showGraph / openNewGraphTab / openForRepo
+├── extension.ts                  # Entry point; the no-op telemetry service (fork: empty connection string, never sends),
+│                                 #   the git-show content provider (registered once for the window), the Changed Repos
+│                                 #   panel (fork), multiRepoGraph.showGraph / openNewGraphTab / openForRepo
 ├── ExtensionController.ts        # Window-level surfaces (repo discovery, status bar, settings, session telemetry)
 │                                 #   plus the graph-tab collection: which tab an entry point reveals or creates,
 │                                 #   watcher routing, peer-busy broadcast, repo-removal retargeting
@@ -30,6 +31,18 @@ src/
 │                                 #   A coarse mirror for the peer notice — never a lock
 ├── GitShowContentProvider.ts     # git-show:// URI protocol for diffs; resolves the repo from the URI fragment,
 │                                 #   never from a global "current" service; `staged`/`worktree` authority sentinels
+├── changedRepos/                 # FORK: the "Changed Repos" panel — a Source Control style webview view of only the
+│   │                             #   repositories that need attention. Uses the vscode.git API, never GitExecutor
+│   ├── ChangedReposView.ts       # registerChangedReposView(): vscode.git API, WebviewViewProvider
+│   │                             #   (multiRepoGraph.changedRepos), status bar count, every multiRepoGraph.changedRepos.*
+│   │                             #   command (view title + webview/context menus), 200 ms debounced redraw; the panel
+│   │                             #   runs commit/smart commit/stage/unstage/discard/push/publish/sync/pull/fetch and
+│   │                             #   opens Source Control's diffs (HEAD↔index '', '~'↔working tree)
+│   ├── repoState.ts              # PURE: GroupKind/GROUP_ORDER/labels, statusInfo (SCM letter + color class),
+│   │                             #   fileCount (distinct paths), needsAttention (include* options), branchLabel,
+│   │                             #   repoState → the plain RepoState/ViewState sent to the page
+│   ├── gitApi.ts                 # Types for the used part of the vscode.git API v1; GitStatus as plain constants
+│   └── __tests__/repoState.test.ts # The pure helpers above
 ├── webview/                      # Backend webview subsystem (refactored from the old ~2400-line WebviewProvider)
 │   ├── GraphTab.ts               # ONE graph = one editor tab: everything view-scoped, composed from the objects below
 │   ├── createGitServices.ts      # Builds the whole repo-bound service set in one place
@@ -75,14 +88,14 @@ src/
 │       ├── compareHandlers.ts    # compareRefs/cancelCompare/openCompareDiff (latest-wins by request id)
 │       ├── telemetryHandlers.ts  # Validates one-way webview telemetry against closed catalogs
 │       ├── avatarHandlers.ts      # Avatar auth state, GitHub authorize/remove-token, refreshDays setting, clear cache
-│       ├── autolinkHandlers.ts    # View dialog's Autolinks: re-validates + writes speedyGit.autolinks.* (defined scope);
+│       ├── autolinkHandlers.ts    # View dialog's Autolinks: re-validates + writes multiRepoGraph.autolinks.* (defined scope);
 │                                 #   an invalid custom list is refused whole, nothing written. The custom list
 │                                 #   answers with settingSaveResult (the dialog waits on it), not an error toast
-│       ├── gitSettingsHandlers.ts # View dialog's Git tab: writes speedyGit.git.timeoutSeconds (defined scope; null clears it
+│       ├── gitSettingsHandlers.ts # View dialog's Git tab: writes multiRepoGraph.git.timeoutSeconds (defined scope; null clears it
 │       │                          #   back to the default), re-normalized, answered with settingSaveResult
 │       ├── settingWriteReplies.ts # How a settings handler reports a write: writeSettingWithReply (settingSaveResult for a
 │       │                             #   dialog that waits) or writeSettingOrToast (the standard error toast)
-│       ├── updateSpeedyGitSetting.ts # Writes one speedyGit.* setting; ExtensionController broadcasts the change.
+│       ├── updateSpeedyGitSetting.ts # Writes one multiRepoGraph.* setting; ExtensionController broadcasts the change.
 │                                 #   …InDefinedScope writes to Workspace when a workspace value already exists,
 │                                 #   so a Global write cannot be silently shadowed. An unregistered-setting refusal
 │                                 #   becomes an actionable error + Reload Window offer
@@ -90,7 +103,7 @@ src/
 ├── services/                     # All repo-bound; every method returns Result<T, GitError>
 │   ├── index.ts                  # Barrel export for all services
 │   ├── GitExecutor.ts            # Spawns git processes, configured timeout (none at 0) — the only place git is invoked
-│   ├── gitCommandTimeout.ts      # The one timeout every spawn uses (speedyGit.git.timeoutSeconds), set by ExtensionController
+│   ├── gitCommandTimeout.ts      # The one timeout every spawn uses (multiRepoGraph.git.timeoutSeconds), set by ExtensionController
 │                                 #   at activation and on change; plus the timeout error text naming the setting
 │   ├── GitLogService.ts          # Parses git log (null-byte format), branches, branches-containing-a-commit, authors + `user.email` (Filter "Me"), unfiltered commits by hash (`--no-walk`, revealed commits). Default 500 commits.
 │   │                             #   Also walks stash base commits, so a stash survives its branch moving
@@ -207,7 +220,7 @@ webview-ui/src/assets.d.ts        # `*.png` imports are `data:` URLs — vite.co
 │                                 #   phases (unpinned items first, then pinned Refresh/Fetch/HEAD) into More
 │                                 #   dropdowns, which reuse `menuPanelClass` and hide separators by
 │                                 #   `data-toolbar-separator`. Items keep row position via flex `order`
-├── ToolbarIconButton.tsx         # Shared toolbar button: icon + optional label (speedyGit.toolbar.showLabels);
+├── ToolbarIconButton.tsx         # Shared toolbar button: icon + optional label (multiRepoGraph.toolbar.showLabels);
 │                                 #   right-click menu toggles labels / Remote button, extensible via extraMenuItems
 ├── TogglePanel.tsx               # Collapsible panel for Filter/Search/Compare widgets
 ├── FilterWidget.tsx              # Author/date filter panel (react-datepicker) + the "N revealed commits [Hide]" chip
@@ -507,6 +520,20 @@ shared/
 
 telemetry.json                    # Machine-readable event manifest for VS Code telemetry inspection
 esbuild.config.mjs                # Production-only telemetry destination injection; empty in dev/test builds
+```
+
+## Fork resources — `resources/` (shipped as is, no build step)
+
+```
+resources/
+├── changed-repos/
+│   ├── view.js                   # Changed Repos page, plain JS: one DOM section per repo kept between updates (message
+│   │                             #   box keeps text/focus/cursor), data-vscode-context per row, posts actions to the view
+│   └── view.css                  # Source Control look; every color a var(--vscode-*) token
+├── codicons/                     # THIRD-PARTY Microsoft Codicons: codicon.css + codicon.ttf, LICENSE-CC-BY-4.0,
+│                                 #   LICENSE-CODE-MIT, README.txt — keep the licence files with the font
+├── views/changed-repos.svg       # Activity Bar icon of the Multi-Repo Git Graph container
+└── multi-repo-git-graph-icon-128.png # Extension icon (package.json "icon")
 ```
 
 Tests live in `__tests__/` directories beside the code they cover (Vitest).
