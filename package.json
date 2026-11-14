@@ -2,7 +2,7 @@
   "name": "multi-repo-git-graph",
   "displayName": "Multi-Repo Git Graph",
   "description": "Git graph for workspaces with many repositories: a Source Control style panel that shows only changed repositories, with a separate graph for each. Fork of Speedy Git.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "local",
   "license": "MIT",
   "repository": {
