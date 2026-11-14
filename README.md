@@ -1,3 +1,66 @@
+# Multi-Repo Git Graph
+
+A Git graph for VS Code workspaces that contain many repositories, for example a ROS 2 workspace with one repository for each package.
+
+Multi-Repo Git Graph is a fork of [Speedy Git](https://github.com/onlineeric/speedy-git-ext) by Eric Cheng. It keeps all Speedy Git features and adds the **Changed Repos** panel.
+
+## Changed Repos panel
+
+The panel has its own icon in the Activity Bar. It shows only the repositories that need your attention:
+
+- Repositories with changed, staged, new or conflicted files.
+- Repositories with commits that are not pushed (↑) or not pulled (↓).
+
+Clean repositories are not shown. The status bar shows the number of changed repositories.
+
+The panel works like the Source Control view:
+
+| Item | Buttons and actions |
+|---|---|
+| Repository | **Open Git Graph** (each repository opens in its own graph tab), **Commit**, **Sync Changes**, **Publish**. Right-click for Stage All, Unstage All, Discard All, Pull, Push, Fetch, Open in Terminal. |
+| Message row | Click to write the commit message and commit. The message is shared with the draft in Source Control. |
+| Staged Changes | Unstage all. For each file: Open File, Unstage. |
+| Changes | Stage all, Discard all. For each file: Open File, Stage, Discard. |
+| File | Click to see the diff, the same as in Source Control. |
+
+The buttons at the top of the panel fetch all repositories, refresh the list, and show all repositories.
+
+### Repositories inside other folders
+
+The panel uses the repository list of the built-in Git extension. If your repositories are inside other folders or inside another repository, add this to `.vscode/settings.json`:
+
+```json
+{
+  "git.repositoryScanMaxDepth": 3,
+  "git.repositoryScanIgnoredFolders": ["node_modules", "build", "install", "log"]
+}
+```
+
+### Settings
+
+| Setting | Default | What it does |
+|---|---|---|
+| `multiRepoGraph.changedRepos.includeUnpushed` | `true` | Show repositories with commits that are not pushed. |
+| `multiRepoGraph.changedRepos.includeBehind` | `true` | Show repositories with commits that are not pulled. |
+| `multiRepoGraph.changedRepos.includeNoUpstream` | `false` | Show repositories whose branch is not published. |
+| `multiRepoGraph.changedRepos.smartCommit` | `ask` | What Commit does when nothing is staged: `ask`, `always` (stage all and commit) or `never`. |
+| `multiRepoGraph.changedRepos.confirmDiscard` | `true` | Ask before discarding changes. |
+| `multiRepoGraph.changedRepos.showStatusBar` | `true` | Show the number of changed repositories in the status bar. |
+
+## Differences from Speedy Git
+
+- All command and setting names start with `multiRepoGraph` instead of `speedyGit`. You can install both extensions at the same time.
+- This fork never sends usage statistics (telemetry).
+- The "What's new" dialog of Speedy Git does not open automatically.
+
+## License
+
+MIT. The original Speedy Git copyright notice is kept in [LICENSE.md](LICENSE.md).
+
+---
+
+*The rest of this file is the original Speedy Git README. In this fork, read "Speedy Git" as "Multi-Repo Git Graph" and `speedyGit.` settings as `multiRepoGraph.` settings.*
+
 # Speedy Git — Fast Git Graph & History UI for VS Code and Cursor
 
 A performance-first Git graph, history viewer, history-editing tool, and worktrees manager built for developers who want speed, clarity, and real Git workflow power — without the bloat.

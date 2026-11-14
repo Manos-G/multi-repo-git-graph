@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { ExtensionController } from './ExtensionController.js';
 import { GitShowContentProvider } from './GitShowContentProvider.js';
 import { createTelemetryService } from './services/TelemetryService.js';
+import { registerChangedReposView } from './changedRepos/ChangedReposView.js';
 
 let controller: ExtensionController | undefined;
 
@@ -18,6 +19,13 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(telemetry);
 
   controller = new ExtensionController(context, log, telemetry, activationStart);
+
+  // Fork: Source Control style panel that lists only the repositories with changes.
+  // Its Git Graph button opens each repository in its own graph tab.
+  void registerChangedReposView(context, {
+    openGraph: (repoRoot) => controller?.openForRepo({ rootUri: repoRoot } as vscode.SourceControl),
+    log,
+  }).catch((err) => log.error(`Changed Repos panel failed to start: ${err}`));
 
   // Registered once, for the window — never per panel. A `git-show:` document
   // names its own repository in the URI, so it keeps resolving correctly after

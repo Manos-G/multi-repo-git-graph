@@ -71,6 +71,143 @@
         "title": "Open in Multi-Repo Git Graph",
         "category": "Multi-Repo Git Graph",
         "icon": "$(zap)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.refresh",
+        "title": "Refresh",
+        "category": "Changed Repos",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.fetchAll",
+        "title": "Fetch All Repositories",
+        "category": "Changed Repos",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.showAll",
+        "title": "Show All Repositories",
+        "category": "Changed Repos",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.showChangedOnly",
+        "title": "Show Only Changed Repositories",
+        "category": "Changed Repos",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.openGraph",
+        "title": "Open Git Graph",
+        "category": "Changed Repos",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.commit",
+        "title": "Commit",
+        "category": "Changed Repos",
+        "icon": "$(check)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.stageAll",
+        "title": "Stage All Changes",
+        "category": "Changed Repos",
+        "icon": "$(add)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.unstageAll",
+        "title": "Unstage All Changes",
+        "category": "Changed Repos",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.discardAll",
+        "title": "Discard All Changes",
+        "category": "Changed Repos",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.push",
+        "title": "Push",
+        "category": "Changed Repos",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.pull",
+        "title": "Pull",
+        "category": "Changed Repos",
+        "icon": "$(arrow-down)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.sync",
+        "title": "Sync Changes",
+        "category": "Changed Repos",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.fetch",
+        "title": "Fetch",
+        "category": "Changed Repos",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.openTerminal",
+        "title": "Open in Terminal",
+        "category": "Changed Repos",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.revealInExplorer",
+        "title": "Reveal in Explorer View",
+        "category": "Changed Repos"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.stageGroup",
+        "title": "Stage All Changes",
+        "category": "Changed Repos",
+        "icon": "$(add)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.unstageGroup",
+        "title": "Unstage All Changes",
+        "category": "Changed Repos",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.discardGroup",
+        "title": "Discard All Changes",
+        "category": "Changed Repos",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.stageFile",
+        "title": "Stage Changes",
+        "category": "Changed Repos",
+        "icon": "$(add)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.unstageFile",
+        "title": "Unstage Changes",
+        "category": "Changed Repos",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.discardFile",
+        "title": "Discard Changes",
+        "category": "Changed Repos",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.openFile",
+        "title": "Open File",
+        "category": "Changed Repos",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.openChange",
+        "title": "Open Changes",
+        "category": "Changed Repos",
+        "icon": "$(compare-changes)"
       }
     ],
     "keybindings": [
@@ -90,6 +227,82 @@
         {
           "command": "multiRepoGraph.openNewGraphTab",
           "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openGraph",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.commit",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.stageAll",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageAll",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardAll",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.push",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.pull",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.sync",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.fetch",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openTerminal",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.revealInExplorer",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.stageGroup",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageGroup",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardGroup",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.stageFile",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageFile",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardFile",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openFile",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openChange",
+          "when": "false"
         }
       ],
       "scm/title": [
@@ -98,189 +311,423 @@
           "command": "multiRepoGraph.openForRepo",
           "group": "navigation"
         }
+      ],
+      "view/title": [
+        {
+          "command": "multiRepoGraph.changedRepos.fetchAll",
+          "when": "view == multiRepoGraph.changedRepos",
+          "group": "navigation@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.refresh",
+          "when": "view == multiRepoGraph.changedRepos",
+          "group": "navigation@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.showAll",
+          "when": "view == multiRepoGraph.changedRepos && !multiRepoGraph.changedRepos.showingAll",
+          "group": "navigation@3"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.showChangedOnly",
+          "when": "view == multiRepoGraph.changedRepos && multiRepoGraph.changedRepos.showingAll",
+          "group": "navigation@3"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "multiRepoGraph.changedRepos.openGraph",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "group": "inline@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.commit",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "group": "inline@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.sync",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:(ahead|behind)/",
+          "group": "inline@3"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.push",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:unpublished/",
+          "group": "inline@4"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openGraph",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "group": "1_open@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openTerminal",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "group": "1_open@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.revealInExplorer",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "group": "1_open@3"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.commit",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "group": "2_commit@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.stageAll",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "group": "2_commit@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageAll",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "group": "2_commit@3"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardAll",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo.*:files/",
+          "group": "2_commit@4"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.sync",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "group": "3_sync@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.pull",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "group": "3_sync@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.push",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "group": "3_sync@3"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.fetch",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^repo/",
+          "group": "3_sync@4"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.commit",
+          "when": "view == multiRepoGraph.changedRepos && viewItem == message",
+          "group": "inline@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageGroup",
+          "when": "view == multiRepoGraph.changedRepos && viewItem == group:index",
+          "group": "inline@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardGroup",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^group:(workingTree|untracked)$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.stageGroup",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^group:(workingTree|untracked|merge)$/",
+          "group": "inline@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openFile",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:/",
+          "group": "inline@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageFile",
+          "when": "view == multiRepoGraph.changedRepos && viewItem == file:index",
+          "group": "inline@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardFile",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:(workingTree|untracked)$/",
+          "group": "inline@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.stageFile",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:(workingTree|untracked|merge)$/",
+          "group": "inline@3"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openChange",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:/",
+          "group": "1_open@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.openFile",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:/",
+          "group": "1_open@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.stageFile",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:(workingTree|untracked|merge)$/",
+          "group": "2_change@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageFile",
+          "when": "view == multiRepoGraph.changedRepos && viewItem == file:index",
+          "group": "2_change@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardFile",
+          "when": "view == multiRepoGraph.changedRepos && viewItem =~ /^file:(workingTree|untracked)$/",
+          "group": "2_change@2"
+        }
       ]
     },
-    "configuration": {
-      "title": "Multi-Repo Git Graph",
-      "properties": {
-        "multiRepoGraph.telemetry.enabled": {
-          "type": "boolean",
-          "default": false,
-          "tags": [
-            "telemetry",
-            "usesOnlineServices"
-          ],
-          "markdownDescription": "Has no effect. This fork never sends usage statistics."
-        },
-        "multiRepoGraph.batchCommitSize": {
-          "type": "number",
-          "default": 500,
-          "minimum": 1,
-          "maximum": 10000,
-          "markdownDescription": "Number of commits to load per batch in the Git graph panel. Lower values give faster initial load; higher values reduce scroll-triggered fetches for large repositories. Values above 10000 are capped."
-        },
-        "multiRepoGraph.statusBarText": {
-          "type": "string",
-          "enum": [
-            "iconAndText",
-            "icon"
-          ],
-          "enumItemLabels": [
-            "Icon + text",
-            "Icon only"
-          ],
-          "enumDescriptions": [
-            "Show the lightning icon followed by 'Multi-Repo Git Graph'.",
-            "Show only the lightning icon."
-          ],
-          "default": "iconAndText",
-          "markdownDescription": "Label shown for the Multi-Repo Git Graph status bar item."
-        },
-        "multiRepoGraph.graphColors": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            "#F44336",
-            "#2196F3",
-            "#4CAF50",
-            "#FF9800",
-            "#9C27B0",
-            "#00BCD4",
-            "#FF5722",
-            "#8BC34A",
-            "#3F51B5",
-            "#FFEB3B"
-          ],
-          "markdownDescription": "Array of hex color strings used for graph branch lines. Colors cycle in order."
-        },
-        "multiRepoGraph.dateFormat": {
-          "type": "string",
-          "enum": [
-            "relative",
-            "absolute",
-            "absolute-date",
-            "system",
-            "custom"
-          ],
-          "enumDescriptions": [
-            "Short relative time (e.g. \"3h ago\")",
-            "YYYY-MM-DD HH:mm (e.g. 2026-05-18 14:32)",
-            "YYYY-MM-DD (e.g. 2026-05-18)",
-            "Follow the OS locale (toLocaleString)",
-            "Use the date-fns token string in `multiRepoGraph.dateFormatCustom`"
-          ],
-          "default": "relative",
-          "markdownDescription": "Date display format for commit rows. Choose `custom` to provide your own [date-fns format tokens](https://date-fns.org/docs/format) in `#multiRepoGraph.dateFormatCustom#`."
-        },
-        "multiRepoGraph.dateFormatCustom": {
-          "type": "string",
-          "default": "",
-          "markdownDescription": "Custom date format using [date-fns tokens](https://date-fns.org/docs/format) (e.g. `yyyy-MM-dd HH:mm`, `MMM d, yyyy`). Only used when `#multiRepoGraph.dateFormat#` is set to `custom`. Falls back to `relative` if the token string is invalid or empty."
-        },
-        "multiRepoGraph.avatars.enabled": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Show author avatars in the commit graph. Initials are used when an avatar is unavailable."
-        },
-        "multiRepoGraph.avatars.refreshDays": {
-          "type": "number",
-          "default": 30,
-          "minimum": 1,
-          "maximum": 365,
-          "markdownDescription": "How long a looked-up avatar stays cached before it is refreshed in the background. Avatars are cached per author email and reused across repositories, so a longer window means far fewer GitHub API requests. A stale entry keeps displaying while it refreshes, and GitHub avatar image URLs are stable — so a longer window does not mean out-of-date pictures."
-        },
-        "multiRepoGraph.git.timeoutSeconds": {
-          "type": "number",
-          "default": 60,
-          "minimum": 0,
-          "markdownDescription": "Maximum time, in seconds, any git command Multi-Repo Git Graph runs may take before it is stopped. This covers everything: loading the graph, push, pull, fetch, commit hooks and the rest. Values below 15 are treated as 15. Set to `0` for no timeout; a command that stalls (a network hang, an unanswered credential prompt) then keeps running until you reload the window."
-        },
-        "multiRepoGraph.showRemoteBranches": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Show remote branch labels in the graph."
-        },
-        "multiRepoGraph.showTags": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Show tag labels in the graph."
-        },
-        "multiRepoGraph.overScan": {
-          "type": "number",
-          "default": 20,
-          "minimum": 0,
-          "maximum": 200,
-          "markdownDescription": "Number of commit rows to render above and below the visible graph viewport. Higher values reduce blank-row flicker during fast scrolling at the cost of more DOM nodes. Lower values use less memory but may show empty rows when scrolling quickly."
-        },
-        "multiRepoGraph.toolbar.showLabels": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Show a small text label under each toolbar icon button (Filter, Search, Compare, Worktrees, Refresh, Fetch, View, Remote, Settings, News, Help). You can also toggle this by right-clicking any toolbar button."
-        },
-        "multiRepoGraph.toolbar.showRemoteButton": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Show the Remote (Manage Remotes) button in the toolbar. You can also toggle this by right-clicking the View, Remote, or Settings toolbar button."
-        },
-        "multiRepoGraph.autolinks.remoteProvider.enabled": {
-          "type": "boolean",
-          "default": true,
-          "markdownDescription": "Turn issue and pull request references in commit messages into links to the repository's GitHub or GitLab page: `#123` and `GH-123` on GitHub, `#123` (issue) and `!123` (merge request) on GitLab, and `owner/repo#123` on either. Links are added only when the remote is on `github.com` or `gitlab.com`: the remote is the only one, or `upstream`, or else `origin`. Any other host gets no links, so a link never points somewhere it might be wrong."
-        },
-        "multiRepoGraph.autolinks.custom": {
-          "type": "array",
-          "default": [],
-          "items": {
-            "type": "object",
-            "required": [
-              "prefix",
-              "url"
+    "configuration": [
+      {
+        "title": "Multi-Repo Git Graph",
+        "properties": {
+          "multiRepoGraph.telemetry.enabled": {
+            "type": "boolean",
+            "default": false,
+            "tags": [
+              "telemetry",
+              "usesOnlineServices"
             ],
-            "properties": {
-              "prefix": {
-                "type": "string",
-                "markdownDescription": "Text that comes before the number, e.g. `ABCD-`. A prefix with a space goes in double quotes: `\"Jira \"` links `Jira 123`. Inside the quotes, `\\\"` is a literal double quote."
-              },
-              "url": {
-                "type": "string",
-                "markdownDescription": "Link to open, with `<num>` where the number goes, e.g. `https://jira.example.com/browse/ABCD-<num>`. Must be an `http://` or `https://` URL."
-              },
-              "ignoreCase": {
-                "type": "boolean",
-                "default": true,
-                "markdownDescription": "Match the prefix in any letter case, so `Jira-` also links `JIRA-123`. On unless set to `false`."
-              },
-              "alphanumeric": {
-                "type": "boolean",
-                "default": false,
-                "markdownDescription": "Match letters and digits after the prefix, not only digits."
-              }
-            }
+            "markdownDescription": "Has no effect. This fork never sends usage statistics."
           },
-          "markdownDescription": "Turn ticket references in commit messages into links, e.g. Jira keys like `ABCD-123`. Each entry is a `prefix` and a `url` with `<num>` where the number goes. The format matches GitLens's `gitlens.autolinks`, so an existing GitLens list can be copied in. You can also edit this list from the graph's **View** settings."
-        },
-        "multiRepoGraph.worktree.basePath": {
-          "type": "string",
-          "default": "../${repoName}.worktrees",
-          "markdownDescription": "Parent directory where new git worktrees are created. The sanitized ref name is appended below it as the worktree folder — either nested or flattened, per `#multiRepoGraph.worktree.folderNameStyle#` (e.g. `../myrepo.worktrees/feat/foo` or `../myrepo.worktrees/feat-foo`). Supports the `${repoName}` token. Defaults to a sibling folder so worktrees stay outside the watched working tree (protects graph performance)."
-        },
-        "multiRepoGraph.worktree.folderNameStyle": {
-          "type": "string",
-          "enum": [
-            "nested",
-            "flat"
-          ],
-          "default": "nested",
-          "enumDescriptions": [
-            "Keep the branch hierarchy as folders: branch `feat/x` becomes `feat/x`.",
-            "Flatten the branch hierarchy into one folder name: branch `feat/x` becomes `feat-x`."
-          ],
-          "markdownDescription": "Which worktree folder is preselected in the Create Worktree dialog for a branch name containing `/`. Both options are always offered in the dialog; this only chooses the default."
+          "multiRepoGraph.batchCommitSize": {
+            "type": "number",
+            "default": 500,
+            "minimum": 1,
+            "maximum": 10000,
+            "markdownDescription": "Number of commits to load per batch in the Git graph panel. Lower values give faster initial load; higher values reduce scroll-triggered fetches for large repositories. Values above 10000 are capped."
+          },
+          "multiRepoGraph.statusBarText": {
+            "type": "string",
+            "enum": [
+              "iconAndText",
+              "icon"
+            ],
+            "enumItemLabels": [
+              "Icon + text",
+              "Icon only"
+            ],
+            "enumDescriptions": [
+              "Show the lightning icon followed by 'Multi-Repo Git Graph'.",
+              "Show only the lightning icon."
+            ],
+            "default": "iconAndText",
+            "markdownDescription": "Label shown for the Multi-Repo Git Graph status bar item."
+          },
+          "multiRepoGraph.graphColors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "#F44336",
+              "#2196F3",
+              "#4CAF50",
+              "#FF9800",
+              "#9C27B0",
+              "#00BCD4",
+              "#FF5722",
+              "#8BC34A",
+              "#3F51B5",
+              "#FFEB3B"
+            ],
+            "markdownDescription": "Array of hex color strings used for graph branch lines. Colors cycle in order."
+          },
+          "multiRepoGraph.dateFormat": {
+            "type": "string",
+            "enum": [
+              "relative",
+              "absolute",
+              "absolute-date",
+              "system",
+              "custom"
+            ],
+            "enumDescriptions": [
+              "Short relative time (e.g. \"3h ago\")",
+              "YYYY-MM-DD HH:mm (e.g. 2026-05-18 14:32)",
+              "YYYY-MM-DD (e.g. 2026-05-18)",
+              "Follow the OS locale (toLocaleString)",
+              "Use the date-fns token string in `multiRepoGraph.dateFormatCustom`"
+            ],
+            "default": "relative",
+            "markdownDescription": "Date display format for commit rows. Choose `custom` to provide your own [date-fns format tokens](https://date-fns.org/docs/format) in `#multiRepoGraph.dateFormatCustom#`."
+          },
+          "multiRepoGraph.dateFormatCustom": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "Custom date format using [date-fns tokens](https://date-fns.org/docs/format) (e.g. `yyyy-MM-dd HH:mm`, `MMM d, yyyy`). Only used when `#multiRepoGraph.dateFormat#` is set to `custom`. Falls back to `relative` if the token string is invalid or empty."
+          },
+          "multiRepoGraph.avatars.enabled": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show author avatars in the commit graph. Initials are used when an avatar is unavailable."
+          },
+          "multiRepoGraph.avatars.refreshDays": {
+            "type": "number",
+            "default": 30,
+            "minimum": 1,
+            "maximum": 365,
+            "markdownDescription": "How long a looked-up avatar stays cached before it is refreshed in the background. Avatars are cached per author email and reused across repositories, so a longer window means far fewer GitHub API requests. A stale entry keeps displaying while it refreshes, and GitHub avatar image URLs are stable — so a longer window does not mean out-of-date pictures."
+          },
+          "multiRepoGraph.git.timeoutSeconds": {
+            "type": "number",
+            "default": 60,
+            "minimum": 0,
+            "markdownDescription": "Maximum time, in seconds, any git command Multi-Repo Git Graph runs may take before it is stopped. This covers everything: loading the graph, push, pull, fetch, commit hooks and the rest. Values below 15 are treated as 15. Set to `0` for no timeout; a command that stalls (a network hang, an unanswered credential prompt) then keeps running until you reload the window."
+          },
+          "multiRepoGraph.showRemoteBranches": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show remote branch labels in the graph."
+          },
+          "multiRepoGraph.showTags": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show tag labels in the graph."
+          },
+          "multiRepoGraph.overScan": {
+            "type": "number",
+            "default": 20,
+            "minimum": 0,
+            "maximum": 200,
+            "markdownDescription": "Number of commit rows to render above and below the visible graph viewport. Higher values reduce blank-row flicker during fast scrolling at the cost of more DOM nodes. Lower values use less memory but may show empty rows when scrolling quickly."
+          },
+          "multiRepoGraph.toolbar.showLabels": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show a small text label under each toolbar icon button (Filter, Search, Compare, Worktrees, Refresh, Fetch, View, Remote, Settings, News, Help). You can also toggle this by right-clicking any toolbar button."
+          },
+          "multiRepoGraph.toolbar.showRemoteButton": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Show the Remote (Manage Remotes) button in the toolbar. You can also toggle this by right-clicking the View, Remote, or Settings toolbar button."
+          },
+          "multiRepoGraph.autolinks.remoteProvider.enabled": {
+            "type": "boolean",
+            "default": true,
+            "markdownDescription": "Turn issue and pull request references in commit messages into links to the repository's GitHub or GitLab page: `#123` and `GH-123` on GitHub, `#123` (issue) and `!123` (merge request) on GitLab, and `owner/repo#123` on either. Links are added only when the remote is on `github.com` or `gitlab.com`: the remote is the only one, or `upstream`, or else `origin`. Any other host gets no links, so a link never points somewhere it might be wrong."
+          },
+          "multiRepoGraph.autolinks.custom": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "required": [
+                "prefix",
+                "url"
+              ],
+              "properties": {
+                "prefix": {
+                  "type": "string",
+                  "markdownDescription": "Text that comes before the number, e.g. `ABCD-`. A prefix with a space goes in double quotes: `\"Jira \"` links `Jira 123`. Inside the quotes, `\\\"` is a literal double quote."
+                },
+                "url": {
+                  "type": "string",
+                  "markdownDescription": "Link to open, with `<num>` where the number goes, e.g. `https://jira.example.com/browse/ABCD-<num>`. Must be an `http://` or `https://` URL."
+                },
+                "ignoreCase": {
+                  "type": "boolean",
+                  "default": true,
+                  "markdownDescription": "Match the prefix in any letter case, so `Jira-` also links `JIRA-123`. On unless set to `false`."
+                },
+                "alphanumeric": {
+                  "type": "boolean",
+                  "default": false,
+                  "markdownDescription": "Match letters and digits after the prefix, not only digits."
+                }
+              }
+            },
+            "markdownDescription": "Turn ticket references in commit messages into links, e.g. Jira keys like `ABCD-123`. Each entry is a `prefix` and a `url` with `<num>` where the number goes. The format matches GitLens's `gitlens.autolinks`, so an existing GitLens list can be copied in. You can also edit this list from the graph's **View** settings."
+          },
+          "multiRepoGraph.worktree.basePath": {
+            "type": "string",
+            "default": "../${repoName}.worktrees",
+            "markdownDescription": "Parent directory where new git worktrees are created. The sanitized ref name is appended below it as the worktree folder — either nested or flattened, per `#multiRepoGraph.worktree.folderNameStyle#` (e.g. `../myrepo.worktrees/feat/foo` or `../myrepo.worktrees/feat-foo`). Supports the `${repoName}` token. Defaults to a sibling folder so worktrees stay outside the watched working tree (protects graph performance)."
+          },
+          "multiRepoGraph.worktree.folderNameStyle": {
+            "type": "string",
+            "enum": [
+              "nested",
+              "flat"
+            ],
+            "default": "nested",
+            "enumDescriptions": [
+              "Keep the branch hierarchy as folders: branch `feat/x` becomes `feat/x`.",
+              "Flatten the branch hierarchy into one folder name: branch `feat/x` becomes `feat-x`."
+            ],
+            "markdownDescription": "Which worktree folder is preselected in the Create Worktree dialog for a branch name containing `/`. Both options are always offered in the dialog; this only chooses the default."
+          }
+        }
+      },
+      {
+        "title": "Changed Repos",
+        "properties": {
+          "multiRepoGraph.changedRepos.includeUnpushed": {
+            "type": "boolean",
+            "default": true,
+            "description": "List a repository when it has commits that are not pushed."
+          },
+          "multiRepoGraph.changedRepos.includeBehind": {
+            "type": "boolean",
+            "default": true,
+            "description": "List a repository when its remote has commits that are not pulled. Use \"Fetch All Repositories\" to update this."
+          },
+          "multiRepoGraph.changedRepos.includeNoUpstream": {
+            "type": "boolean",
+            "default": false,
+            "description": "List a repository when its branch is not published to a remote."
+          },
+          "multiRepoGraph.changedRepos.smartCommit": {
+            "type": "string",
+            "enum": [
+              "ask",
+              "always",
+              "never"
+            ],
+            "default": "ask",
+            "enumDescriptions": [
+              "Ask before staging all changes when nothing is staged.",
+              "Stage all changes and commit when nothing is staged.",
+              "Do not commit when nothing is staged."
+            ],
+            "description": "What Commit does when no changes are staged."
+          },
+          "multiRepoGraph.changedRepos.confirmDiscard": {
+            "type": "boolean",
+            "default": true,
+            "description": "Ask before discarding changes."
+          },
+          "multiRepoGraph.changedRepos.showStatusBar": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show the number of changed repositories in the status bar."
+          }
         }
       }
-    }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "multiRepoGraph",
+          "title": "Multi-Repo Git Graph",
+          "icon": "resources/views/changed-repos.svg"
+        }
+      ]
+    },
+    "views": {
+      "multiRepoGraph": [
+        {
+          "id": "multiRepoGraph.changedRepos",
+          "name": "Changed Repos"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "multiRepoGraph.changedRepos",
+        "contents": "All repositories are clean and in sync.\n[Show All Repositories](command:multiRepoGraph.changedRepos.showAll)\n[Fetch All Repositories](command:multiRepoGraph.changedRepos.fetchAll)\nRepositories inside other folders are found when \"git.repositoryScanMaxDepth\" is high enough."
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "pnpm run build:prod",
