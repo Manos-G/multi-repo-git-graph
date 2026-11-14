@@ -285,6 +285,17 @@
         "command": "multiRepoGraph.vcstool.fix",
         "title": "Fix .repos Problem",
         "category": "Multi-Repo Git Graph"
+      },
+      {
+        "command": "multiRepoGraph.openCombinedGraph",
+        "title": "Open Combined Graph (All Repositories)",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.statusMenu",
+        "title": "Multi-Repo Git Graph Menu",
+        "category": "Multi-Repo Git Graph"
       }
     ],
     "keybindings": [
@@ -392,6 +403,10 @@
         {
           "command": "multiRepoGraph.vcstool.fix",
           "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.statusMenu",
+          "when": "false"
         }
       ],
       "scm/title": [
@@ -436,6 +451,11 @@
           "command": "multiRepoGraph.vcstool.matchDayCheck",
           "when": "view == multiRepoGraph.changedRepos",
           "group": "navigation@6"
+        },
+        {
+          "command": "multiRepoGraph.openCombinedGraph",
+          "when": "view == multiRepoGraph.changedRepos",
+          "group": "navigation@0"
         }
       ],
       "webview/context": [
@@ -797,6 +817,24 @@
             ],
             "default": "pinned",
             "markdownDescription": "Which listed repositories are **frozen**: not opened in VS Code's Git support (no `git status`, no file watchers) and checked only by reading their `.git` files. `\"pinned\"`: entries whose version is a commit hash written by hand (versions pinned by **Lock Versions** stay open). `\"none\"`: no repository is frozen. A list: these entry names."
+          }
+        }
+      },
+      {
+        "title": "Combined Graph",
+        "properties": {
+          "multiRepoGraph.combinedGraph.changeSetMinutes": {
+            "type": "number",
+            "default": 15,
+            "minimum": 1,
+            "markdownDescription": "Commits by the same author in two or more repositories, each at most this many minutes after the previous one, are tagged as one **change set** in the combined graph."
+          },
+          "multiRepoGraph.combinedGraph.pageSize": {
+            "type": "number",
+            "default": 200,
+            "minimum": 50,
+            "maximum": 2000,
+            "markdownDescription": "How many commits the combined graph loads per repository at a time. More pages load as you scroll."
           }
         }
       }

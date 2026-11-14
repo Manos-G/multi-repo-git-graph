@@ -18,6 +18,8 @@ import { GitExecutor } from '../services/GitExecutor.js';
 import { VcsToolWorkspace } from '../vcstool/VcsToolWorkspace.js';
 import { registerVcstoolCommands } from '../vcstool/vcstoolCommands.js';
 import { MatchDayPanel } from '../vcstool/MatchDayPanel.js';
+import { CombinedGraphPanel } from '../combinedGraph/CombinedGraphPanel.js';
+import type { GitDiffService } from '../services/GitDiffService.js';
 
 /**
  * "Changed Repos" panel.
@@ -63,6 +65,10 @@ const unstagedPaths = (repo: GitRepository) => [
 export interface ChangedReposDeps {
   /** Opens the repository in its own graph tab (reveals the tab if it is already open). */
   openGraph(repoRoot: vscode.Uri): Promise<void> | void;
+  /** Open (or reveal) the repository's graph tab and select the commit (combined graph). */
+  revealCommit(repoPath: string, hash: string): Promise<void>;
+  /** The window's diff service for a repository (combined graph details). */
+  diffService(repoPath: string): GitDiffService;
   log: vscode.LogOutputChannel;
 }
 
@@ -481,7 +487,7 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
   if (!git) return;
 
   const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 49);
-  statusBar.command = 'workbench.view.extension.multiRepoGraph';
+  statusBar.command = `${CFG}.statusMenu`;
   context.subscriptions.push(statusBar);
 
   const updateStatusBar = () => {
@@ -497,7 +503,8 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
   };
 
   // vcstool (.repos) support: the workspace opens the listed repositories, so it starts with the panel.
-  const vcs = new VcsToolWorkspace(git, new GitExecutor(deps.log), deps.log);
+  const executor = new GitExecutor(deps.log);
+  const vcs = new VcsToolWorkspace(git, executor, deps.log);
   context.subscriptions.push(vcs);
   const panel = new ChangedReposPanel(context, git, deps, updateStatusBar, vcs);
   context.subscriptions.push(
@@ -545,6 +552,28 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
     openMatchDay: () => MatchDayPanel.show(context, vcs),
   });
   void vcs.refresh();
+
+  // The combined graph: every repository in one timeline.
+  const openCombined = () =>
+    CombinedGraphPanel.show(context, { git, vcs, executor, log: deps.log, diffService: deps.diffService, revealCommit: deps.revealCommit });
+  context.subscriptions.push(vscode.commands.registerCommand('multiRepoGraph.openCombinedGraph', openCombined));
+
+  // The status bar item opens a small menu of the multi-repository views.
+  context.subscriptions.push(vscode.commands.registerCommand(`${CFG}.statusMenu`, async () => {
+    const items: (vscode.QuickPickItem & { run: () => unknown })[] = [
+      { label: '$(repo) Changed Repos', description: 'the panel', run: () => vscode.commands.executeCommand('workbench.view.extension.multiRepoGraph') },
+      { label: '$(type-hierarchy) Combined Graph', description: 'every repository in one timeline', run: openCombined },
+    ];
+    if (vcs.files.length > 0) items.push({ label: '$(checklist) Match-Day Check', description: vcs.files.map((f) => f.fileName).join(', '), run: () => MatchDayPanel.show(context, vcs) });
+    items.push(
+      { label: '', kind: vscode.QuickPickItemKind.Separator, run: () => undefined },
+      { label: '$(cloud-download) Fetch All Repositories', run: () => vscode.commands.executeCommand(`${CFG}.fetchAll`) },
+      { label: '$(repo-pull) Pull All Repositories', run: () => vscode.commands.executeCommand(`${CFG}.pullAll`) },
+      { label: '$(repo-push) Push All Repositories', run: () => vscode.commands.executeCommand(`${CFG}.pushAll`) },
+    );
+    const pick = await vscode.window.showQuickPick(items, { title: 'Multi-Repo Git Graph' });
+    if (pick) await pick.run();
+  }));
 
   const reg = (id: string, fn: (ctx?: MenuContext) => unknown) =>
     context.subscriptions.push(vscode.commands.registerCommand(`${CFG}.${id}`, fn));
