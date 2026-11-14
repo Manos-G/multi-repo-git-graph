@@ -220,6 +220,71 @@
         "title": "Open Changes",
         "category": "Changed Repos",
         "icon": "$(compare-changes)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.check",
+        "title": "Check .repos Repositories",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.lockVersions",
+        "title": "Lock Versions in .repos File…",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(lock)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.unlockVersions",
+        "title": "Unlock Versions in .repos File…",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(unlock)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.restoreVersions",
+        "title": "Restore Versions from .repos File…",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(history)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.matchDayCheck",
+        "title": "Match-Day Check",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.chooseTargetFolder",
+        "title": "Choose .repos Target Folder…",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(folder)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.writeRecommendedSettings",
+        "title": "Write Recommended Git Settings for .repos…",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.openFile",
+        "title": "Open .repos File",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.cloneMissing",
+        "title": "Clone Missing Repository",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.addToFile",
+        "title": "Add Repository to .repos File",
+        "category": "Multi-Repo Git Graph",
+        "icon": "$(add)"
+      },
+      {
+        "command": "multiRepoGraph.vcstool.fix",
+        "title": "Fix .repos Problem",
+        "category": "Multi-Repo Git Graph"
       }
     ],
     "keybindings": [
@@ -315,6 +380,18 @@
         {
           "command": "multiRepoGraph.changedRepos.openChange",
           "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.vcstool.cloneMissing",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.vcstool.addToFile",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.vcstool.fix",
+          "when": "false"
         }
       ],
       "scm/title": [
@@ -354,6 +431,11 @@
           "command": "multiRepoGraph.changedRepos.showChangedOnly",
           "when": "view == multiRepoGraph.changedRepos && multiRepoGraph.changedRepos.showingAll",
           "group": "navigation@5"
+        },
+        {
+          "command": "multiRepoGraph.vcstool.matchDayCheck",
+          "when": "view == multiRepoGraph.changedRepos",
+          "group": "navigation@6"
         }
       ],
       "webview/context": [
@@ -680,6 +762,43 @@
             "description": "Show the number of changed repositories in the status bar."
           }
         }
+      },
+      {
+        "title": "vcstool (.repos)",
+        "properties": {
+          "multiRepoGraph.vcstool.files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "markdownDescription": "vcstool `.repos` files to read, relative to the first workspace folder or absolute. Empty: every `*.repos` file in the workspace folders and one folder below them."
+          },
+          "multiRepoGraph.vcstool.targetFolder": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "Folder where the paths in the `.repos` files start (the folder given to `vcs import`), relative to the first workspace folder or absolute. Empty: chosen automatically — the file's folder, its `src/`, or `ros_ws/src/`, whichever has most of the entries."
+          },
+          "multiRepoGraph.vcstool.freeze": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pinned",
+                  "none"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "default": "pinned",
+            "markdownDescription": "Which listed repositories are **frozen**: not opened in VS Code's Git support (no `git status`, no file watchers) and checked only by reading their `.git` files. `\"pinned\"`: entries whose version is a commit hash written by hand (versions pinned by **Lock Versions** stay open). `\"none\"`: no repository is frozen. A list: these entry names."
+          }
+        }
       }
     ],
     "viewsContainers": {
@@ -715,6 +834,7 @@
     "typecheck": "tsc --noEmit",
     "generate-test-repo": "tsx scripts/main.ts",
     "generate-submodule-repos": "tsx scripts/generate-submodule-repos.ts",
+    "generate-ros-workspace": "tsx scripts/generate-ros-workspace.ts",
     "test": "vitest run",
     "ext:package": "npx @vscode/vsce package --no-dependencies",
     "ext:publish": "pnpm run ext:publish:vscode && pnpm run ext:publish:cursor",

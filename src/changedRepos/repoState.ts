@@ -3,6 +3,7 @@
 // be unit-tested without VS Code (src/changedRepos/__tests__/).
 import * as path from 'path';
 import { GitStatus, type GitChange, type GitRepository } from './gitApi.js';
+import type { VcsView } from '../vcstool/model.js';
 
 export type GroupKind = 'merge' | 'index' | 'workingTree' | 'untracked';
 export const GROUP_ORDER: GroupKind[] = ['merge', 'index', 'workingTree', 'untracked'];
@@ -128,9 +129,13 @@ export interface RepoState {
   message: string;
   fileCount: number;
   groups: GroupState[];
+  /** How the repository differs from its .repos file (one sentence each); empty when it matches or is not listed. */
+  drift?: string[];
 }
 export interface ViewState {
   repos: RepoState[];
+  /** The vcstool .repos files (header, missing, extras, frozen group); see VcsToolWorkspace.viewState. */
+  vcs?: VcsView[];
   total: number;
   changed: number;
   showAll: boolean;

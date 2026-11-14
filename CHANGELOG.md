@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Multi-Repo Git Graph is a fork of [Speedy Git](https://github.com/onlineeric/speedy-git-ext). The fork's own versions come first. Below them is the Speedy Git history the fork is based on (up to 5.24.2).
 
+## [Unreleased]
+
+### Added
+- **vcstool (`.repos`) support** in the Changed Repos panel. The extension finds `*.repos` files (or the ones in `multiRepoGraph.vcstool.files`), works out the folder their paths start in (`multiRepoGraph.vcstool.targetFolder` to change it), and opens every listed repository in VS Code's Git support, so `git.repositoryScanMaxDepth` is not needed any more.
+- **Drift** from the file on each repository's row: another branch, another commit than a pinned hash (ahead, behind or diverged), another `origin` URL. A summary line per file, for example `ros_ws.repos · 26 repos · 2 drift · 1 missing`.
+- **Missing** repositories with a **Clone** button, and repositories **not in the file** with an **Add to File** button.
+- **Frozen repositories**: entries pinned to a commit hash are not opened in VS Code's Git support (no `git status`, no watchers). They are checked by reading their `.git` files when the window gets focus and on **Check**, and listed in a collapsed **Frozen** group. Setting `multiRepoGraph.vcstool.freeze`.
+- **Lock Versions** / **Unlock Versions**: write the exact commits into the file (refused, with the reasons, when a commit is not on its remote), keep order and comments, remember the branch as `# locked: <branch>`, and offer to commit only the file.
+- **Restore Versions** from the file or from an older commit of it; refused while a repository has uncommitted changes.
+- **Match-Day Check**: one tab with a green **Ready** or every problem in every repository, frozen ones included, each with a fix button.
+- **Apply recommended settings** button: `git.autoRepositoryDetection: false` (asks first).
+
 ## [0.2.0] - 2026-11-14
 
 ### Added

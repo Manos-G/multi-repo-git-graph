@@ -46,6 +46,8 @@ export interface GitRepositoryState {
   readonly mergeChanges: GitChange[];
   readonly indexChanges: GitChange[];
   readonly workingTreeChanges: GitChange[];
+  /** The repository's remotes (name and URLs as in .git/config). */
+  readonly remotes?: readonly { readonly name: string; readonly fetchUrl?: string; readonly pushUrl?: string }[];
   /** Only filled when "git.untrackedChanges" is "separate". */
   readonly untrackedChanges?: GitChange[];
   readonly onDidChange: vscode.Event<void>;
@@ -72,4 +74,6 @@ export interface GitApi {
   readonly onDidOpenRepository: vscode.Event<GitRepository>;
   readonly onDidCloseRepository: vscode.Event<GitRepository>;
   toGitUri(uri: vscode.Uri, ref: string): vscode.Uri;
+  /** Opens a repository in VS Code's Git support (Source Control, decorations, watchers). VS Code 1.74+. */
+  openRepository?(root: vscode.Uri): Promise<GitRepository | null>;
 }

@@ -17,6 +17,7 @@ export default defineConfig({
     include: [
       'src/__tests__/**/*.test.ts',
       'src/changedRepos/__tests__/**/*.test.ts',
+      'src/vcstool/__tests__/**/*.test.ts',
       'webview-ui/src/**/__tests__/**/*.test.ts',
     ],
   },

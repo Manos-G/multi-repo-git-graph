@@ -14,6 +14,10 @@ import {
   type GroupKind,
   type ViewState,
 } from './repoState.js';
+import { GitExecutor } from '../services/GitExecutor.js';
+import { VcsToolWorkspace } from '../vcstool/VcsToolWorkspace.js';
+import { registerVcstoolCommands } from '../vcstool/vcstoolCommands.js';
+import { MatchDayPanel } from '../vcstool/MatchDayPanel.js';
 
 /**
  * "Changed Repos" panel.
@@ -78,13 +82,16 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
     private readonly git: GitApi,
     private readonly deps: ChangedReposDeps,
     private readonly onChange: () => void,
+    private readonly vcs: VcsToolWorkspace,
   ) {}
 
   // ----- data --------------------------------------------------------------
 
+  /** Every repository VS Code's Git support has open, except frozen ones (they have their own group). */
   sortedRepos(): GitRepository[] {
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    return [...this.git.repositories].sort((a, b) => {
+    const frozen = this.vcs.frozenPaths();
+    return this.git.repositories.filter((r) => !frozen.has(path.resolve(r.rootUri.fsPath))).sort((a, b) => {
       if (a.rootUri.fsPath === root) return -1;
       if (b.rootUri.fsPath === root) return 1;
       return repoName(a).localeCompare(repoName(b), undefined, { sensitivity: 'base' });
@@ -93,7 +100,8 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
 
   changedRepos(): GitRepository[] {
     const opts = cfg();
-    return this.sortedRepos().filter((r) => needsAttention(r, opts));
+    // A repository that differs from its .repos file needs attention too, even when it is clean.
+    return this.sortedRepos().filter((r) => needsAttention(r, opts) || this.vcs.driftNotes(r.rootUri.fsPath).length > 0);
   }
 
   findRepo(repoPath: string | undefined): GitRepository | undefined {
@@ -115,7 +123,8 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
     const changed = this.changedRepos();
     const list = this.showAll ? this.sortedRepos() : changed;
     const state: ViewState = {
-      repos: list.map((r) => repoState(r, root)),
+      repos: list.map((r) => ({ ...repoState(r, root), drift: this.vcs.driftNotes(r.rootUri.fsPath) })),
+      vcs: this.vcs.viewState(),
       total: this.git.repositories.length,
       changed: changed.length,
       showAll: this.showAll,
@@ -164,10 +173,21 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
     file?: string;
     value?: string;
     message?: string;
+    name?: string;
+    path?: string;
+    fix?: string;
   }): Promise<void> {
     if (m.type === 'ready') return this.postState();
     if (m.type === 'showAll') return this.setShowAll(true);
     if (m.type === 'fetchAll') return void vscode.commands.executeCommand(`${CFG}.fetchAll`);
+    if (m.type === 'vcs') {
+      // A .repos button: the command name and its arguments come from the page.
+      const allowed = ['check', 'lockVersions', 'unlockVersions', 'restoreVersions', 'matchDayCheck', 'chooseTargetFolder', 'writeRecommendedSettings', 'cloneMissing', 'addToFile', 'openFile', 'fix'];
+      if (m.action && allowed.includes(m.action)) {
+        void vscode.commands.executeCommand(`multiRepoGraph.vcstool.${m.action}`, { file: m.file, name: m.name, path: m.path, action: m.fix });
+      }
+      return;
+    }
     const repo = this.findRepo(m.repo);
     if (!repo) return;
     switch (m.type) {
@@ -476,7 +496,10 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
     }
   };
 
-  const panel = new ChangedReposPanel(context, git, deps, updateStatusBar);
+  // vcstool (.repos) support: the workspace opens the listed repositories, so it starts with the panel.
+  const vcs = new VcsToolWorkspace(git, new GitExecutor(deps.log), deps.log);
+  context.subscriptions.push(vcs);
+  const panel = new ChangedReposPanel(context, git, deps, updateStatusBar, vcs);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(VIEW_ID, panel, { webviewOptions: { retainContextWhenHidden: true } }),
   );
@@ -508,6 +531,20 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
     vscode.workspace.onDidChangeConfiguration((e) => e.affectsConfiguration(CFG) && schedule()),
   );
   void vscode.commands.executeCommand('setContext', CTX_SHOWING_ALL, false);
+  context.subscriptions.push(vcs.onDidChange(schedule));
+  registerVcstoolCommands(context, {
+    workspace: vcs,
+    log: deps.log,
+    pushRepo: async (repoPath) => {
+      const repo = panel.findRepo(repoPath);
+      if (repo) return panel.push(repo);
+      // A frozen repository is not open in VS Code's Git support: push it with git directly.
+      const r = await vcs.gitOrError(repoPath, ['push'], { GIT_TERMINAL_PROMPT: '0' });
+      if (!r.ok) void vscode.window.showErrorMessage(`Push failed in ${path.basename(repoPath)}: ${r.error.split('\n')[0]}`);
+    },
+    openMatchDay: () => MatchDayPanel.show(context, vcs),
+  });
+  void vcs.refresh();
 
   const reg = (id: string, fn: (ctx?: MenuContext) => unknown) =>
     context.subscriptions.push(vscode.commands.registerCommand(`${CFG}.${id}`, fn));

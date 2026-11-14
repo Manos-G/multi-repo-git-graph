@@ -8,6 +8,12 @@
   const saved = vscode.getState() || {};
   const collapsed = new Set(saved.collapsed || []); // keys: repo path, or repo path + '|' + group kind
   const root = document.getElementById('root');
+  // Three parts: the .repos files on top, the repositories, the Frozen group at the bottom.
+  root.innerHTML = '<div id="vcs-top"></div><div id="repos"></div><div id="vcs-bottom"></div>';
+  const vcsTop = document.getElementById('vcs-top');
+  const reposEl = document.getElementById('repos');
+  const vcsBottom = document.getElementById('vcs-bottom');
+  const frozenOpen = new Set(saved.frozenOpen || []); // the Frozen group starts collapsed
 
   /** One DOM section per repository, kept between updates so the message box keeps its text, focus and cursor. */
   const sections = new Map();
@@ -15,7 +21,7 @@
   let selectedKey = null;
 
   const post = (msg) => vscode.postMessage(msg);
-  const saveState = () => vscode.setState({ collapsed: [...collapsed] });
+  const saveState = () => vscode.setState({ collapsed: [...collapsed], frozenOpen: [...frozenOpen] });
 
   const esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -41,10 +47,11 @@
 
   function render() {
     if (!state) return;
+    renderVcs();
     if (state.repos.length === 0) {
       sections.forEach((s) => s.el.remove());
       sections.clear();
-      root.innerHTML = `
+      reposEl.innerHTML = `
         <div class="empty">
           <p>All ${state.total} repositories are clean and in sync.</p>
           <div class="primary secondary"><div class="main" data-act="showAll">${icon('eye')}<span>Show All Repositories</span></div></div>
@@ -53,7 +60,7 @@
         </div>`;
       return;
     }
-    const empty = root.querySelector('.empty');
+    const empty = reposEl.querySelector('.empty');
     if (empty) empty.remove();
 
     const seen = new Set();
@@ -65,7 +72,7 @@
         sections.set(repo.path, s);
       }
       updateSection(s, repo);
-      if (root.children[index] !== s.el) root.insertBefore(s.el, root.children[index] || null);
+      if (reposEl.children[index] !== s.el) reposEl.insertBefore(s.el, reposEl.children[index] || null);
     });
     for (const [key, s] of sections) {
       if (!seen.has(key)) {
@@ -81,6 +88,7 @@
     el.dataset.repo = repo.path;
     el.innerHTML = `
       <div class="row repo-row" tabindex="0"></div>
+      <div class="drift-list"></div>
       <div class="repo-body">
         <div class="input-wrap"><textarea class="message" rows="1" spellcheck="true"></textarea></div>
         <div class="button-wrap"></div>
@@ -102,6 +110,7 @@
     return {
       el,
       header: el.querySelector('.repo-row'),
+      driftList: el.querySelector('.drift-list'),
       body: el.querySelector('.repo-body'),
       inputWrap: el.querySelector('.input-wrap'),
       ta,
@@ -148,6 +157,9 @@
       <span class="actions always">${action('git-branch', 'Open Git Graph (own tab)', 'repo:openGraph').replace('class="action"', 'class="action graph-button"')}</span>`;
 
     s.body.classList.toggle('collapsed', isCollapsed);
+    s.driftList.innerHTML = (repo.drift || [])
+      .map((d) => `<div class="row drift-row" title="${esc(d)}">${icon('warning', 'icon')}<span class="label">${esc(d)}</span></div>`)
+      .join('');
 
     // Message box: shown when there is something to commit, like Source Control.
     s.inputWrap.style.display = hasFiles ? '' : 'none';
@@ -220,6 +232,121 @@
     s.groups.innerHTML = html;
   }
 
+  // ----- .repos files (vcstool) --------------------------------------------------
+
+  const vcsAction = (name, title, act, extra) =>
+    `<span class="action" role="button" tabindex="0" title="${esc(title)}" aria-label="${esc(title)}" data-act="vcs:${act}"${extra || ''}>${icon(name)}</span>`;
+  const textButton = (label, act, data) => `<span class="text-button" role="button" tabindex="0" data-act="vcs:${act}"${data}>${esc(label)}</span>`;
+  const dataAttrs = (o) => Object.entries(o).map(([k, v]) => (v ? ` data-${k}="${esc(v)}"` : '')).join('');
+  const shortVersion = (v) => (/^[0-9a-f]{7,40}$/i.test(v) ? v.slice(0, 8) : v);
+
+  function renderVcs() {
+    const files = state.vcs || [];
+    let top = '';
+    let frozen = [];
+    for (const v of files) {
+      const d = dataAttrs({ file: v.file });
+      const lock = v.lock === 'locked' ? icon('lock', 'lock-state') : v.lock === 'partly' ? icon('lock-small', 'lock-state') : '';
+      top += `
+        <div class="vcs-file">
+          <div class="row vcs-row" tabindex="0"${d} title="${esc(v.summary + '\n' + v.file)}">
+            ${icon('file-code', 'icon')}
+            <span class="label">${esc(v.summary)}</span>${lock}
+            <span class="spacer"></span>
+            <span class="actions">
+              ${vcsAction('lock', 'Lock Versions…', 'lockVersions', d)}
+              ${vcsAction('unlock', 'Unlock Versions…', 'unlockVersions', d)}
+              ${vcsAction('history', 'Restore Versions…', 'restoreVersions', d)}
+              ${vcsAction('go-to-file', 'Open File', 'openFile', d)}
+            </span>
+            <span class="actions always">
+              ${vcsAction('refresh', 'Check (re-read every repository)', 'check', d)}
+              ${vcsAction('checklist', 'Match-Day Check', 'matchDayCheck', d)}
+            </span>
+          </div>`;
+      if (v.error) {
+        top += `<div class="row vcs-sub error-row">${icon('error', 'icon')}<span class="label">${esc(v.error)}</span></div>`;
+      } else {
+        top += `
+          <div class="row vcs-sub" title="Paths in ${esc(v.fileName)} start in this folder">
+            ${icon('folder', 'icon')}
+            <span class="label">paths start in ${esc(v.target.display)}</span>
+            <span class="desc">${v.target.auto ? 'automatic · ' : ''}${v.target.found} of ${v.target.total} exist</span>
+            <span class="spacer"></span>
+            <span class="actions">${vcsAction('edit', 'Change Folder…', 'chooseTargetFolder', d)}</span>
+          </div>`;
+      }
+      if (v.recommendSettings && !v.error) {
+        top += `
+          <div class="row vcs-sub" title="VS Code still opens repositories on its own, so frozen repositories get git status and file watchers.">
+            ${icon('settings-gear', 'icon')}
+            <span class="label">Recommended Git settings are not set</span>
+            <span class="spacer"></span>
+            ${textButton('Apply…', 'writeRecommendedSettings', d)}
+          </div>`;
+      }
+      for (const m of v.missing) {
+        top += `
+          <div class="row vcs-sub missing-row" title="${esc(m.path)}">
+            ${icon('warning', 'icon')}
+            <span class="label">${esc(m.name)}</span>
+            <span class="desc">missing${m.version ? ' · ' + esc(shortVersion(m.version)) : ''}</span>
+            <span class="spacer"></span>
+            ${textButton('Clone', 'cloneMissing', dataAttrs({ file: v.file, name: m.name }))}
+          </div>`;
+      }
+      for (const x of v.extras) {
+        top += `
+          <div class="row vcs-sub" title="${esc(x.path)}">
+            ${icon('question', 'icon')}
+            <span class="label">${esc(x.name)}</span>
+            <span class="desc">not in ${esc(v.fileName)}</span>
+            <span class="spacer"></span>
+            ${textButton('Add to File', 'addToFile', dataAttrs({ file: v.file, path: x.path }))}
+          </div>`;
+      }
+      for (const u of v.unsupported) {
+        top += `<div class="row vcs-sub">${icon('circle-slash', 'icon')}<span class="label">${esc(u.name)}</span><span class="desc">type "${esc(u.type)}" not supported</span></div>`;
+      }
+      top += '</div>';
+      frozen = frozen.concat(v.frozen.map((f) => Object.assign({ file: v.file }, f)));
+    }
+    vcsTop.innerHTML = top;
+
+    if (frozen.length === 0) {
+      vcsBottom.innerHTML = '';
+      return;
+    }
+    const open = frozenOpen.has('frozen');
+    const warnings = frozen.filter((f) => f.warn).length;
+    let html = `
+      <div class="row group-row frozen-group" tabindex="0" data-act="vcs-toggle-frozen" title="Pinned repositories. VS Code's Git support does not open them; they are checked by reading their .git files.">
+        ${icon(open ? 'chevron-down' : 'chevron-right', 'twisty')}
+        <span class="label">Frozen</span>
+        ${warnings ? `<span class="desc frozen-warn">${icon('warning')} ${warnings} changed</span>` : ''}
+        <span class="spacer"></span>
+        <span class="badge">${frozen.length}</span>
+      </div>`;
+    if (open) {
+      for (const f of frozen) {
+        const d = dataAttrs({ file: f.file, name: f.name, path: f.path });
+        const note = f.note + (f.openInGit ? ' · open in Source Control' : '');
+        html += `
+          <div class="row file-row frozen-row${f.warn ? ' warn' : ''}" tabindex="0" title="${esc(f.path)}">
+            ${icon(f.warn ? 'warning' : 'lock-small', 'icon')}
+            <span class="label">${esc(f.name)}</span>
+            <span class="desc">${esc(shortVersion(f.version))}${note ? ' · ' + esc(note) : ''}</span>
+            <span class="spacer"></span>
+            <span class="actions">
+              ${vcsAction('terminal', 'Open in Terminal', 'fix', d + ' data-fix="openTerminal"')}
+              ${vcsAction('folder-opened', 'Reveal in Explorer View', 'fix', d + ' data-fix="reveal"')}
+            </span>
+          </div>`;
+      }
+    }
+    vcsBottom.innerHTML = html;
+  }
+
   // ----- user input ------------------------------------------------------------
 
   function toggle(key) {
@@ -237,6 +364,16 @@
 
     if (actEl) {
       const act = actEl.dataset.act;
+      if (act === 'vcs-toggle-frozen') {
+        if (frozenOpen.has('frozen')) frozenOpen.delete('frozen');
+        else frozenOpen.add('frozen');
+        saveState();
+        return renderVcs();
+      }
+      if (act.startsWith('vcs:')) {
+        const ds = actEl.dataset;
+        return post({ type: 'vcs', action: act.slice(4), file: ds.file, name: ds.name, path: ds.path, fix: ds.fix });
+      }
       if (act === 'showAll') return post({ type: 'showAll' });
       if (act === 'fetchAll') return post({ type: 'fetchAll' });
       const s = sections.get(repoPath);
