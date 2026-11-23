@@ -109,6 +109,18 @@
         "icon": "$(eye-closed)"
       },
       {
+        "command": "multiRepoGraph.changedRepos.viewAsTree",
+        "title": "View as Tree",
+        "category": "Changed Repos",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.viewAsList",
+        "title": "View as List",
+        "category": "Changed Repos",
+        "icon": "$(list-flat)"
+      },
+      {
         "command": "multiRepoGraph.changedRepos.openGraph",
         "title": "Open Git Graph",
         "category": "Changed Repos",
@@ -205,6 +217,24 @@
       },
       {
         "command": "multiRepoGraph.changedRepos.discardFile",
+        "title": "Discard Changes",
+        "category": "Changed Repos",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.stageFolder",
+        "title": "Stage Changes",
+        "category": "Changed Repos",
+        "icon": "$(add)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.unstageFolder",
+        "title": "Unstage Changes",
+        "category": "Changed Repos",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "multiRepoGraph.changedRepos.discardFolder",
         "title": "Discard Changes",
         "category": "Changed Repos",
         "icon": "$(discard)"
@@ -385,6 +415,18 @@
           "when": "false"
         },
         {
+          "command": "multiRepoGraph.changedRepos.stageFolder",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageFolder",
+          "when": "false"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardFolder",
+          "when": "false"
+        },
+        {
           "command": "multiRepoGraph.changedRepos.openFile",
           "when": "false"
         },
@@ -451,6 +493,16 @@
           "command": "multiRepoGraph.vcstool.matchDayCheck",
           "when": "view == multiRepoGraph.changedRepos",
           "group": "navigation@6"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.viewAsTree",
+          "when": "view == multiRepoGraph.changedRepos && multiRepoGraph.changedRepos.viewMode != 'tree'",
+          "group": "navigation@7"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.viewAsList",
+          "when": "view == multiRepoGraph.changedRepos && multiRepoGraph.changedRepos.viewMode == 'tree'",
+          "group": "navigation@7"
         },
         {
           "command": "multiRepoGraph.openCombinedGraph",
@@ -553,6 +605,21 @@
           "command": "multiRepoGraph.changedRepos.discardFile",
           "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection =~ /^file-(workingTree|untracked)$/",
           "group": "2_change@2"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.stageFolder",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection =~ /^folder-(workingTree|untracked|merge)$/",
+          "group": "1_change@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.unstageFolder",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection == 'folder-index'",
+          "group": "1_change@1"
+        },
+        {
+          "command": "multiRepoGraph.changedRepos.discardFolder",
+          "when": "webviewId == 'multiRepoGraph.changedRepos' && webviewSection =~ /^folder-(workingTree|untracked)$/",
+          "group": "1_change@2"
         }
       ]
     },
@@ -780,6 +847,19 @@
             "type": "boolean",
             "default": true,
             "description": "Show the number of changed repositories in the status bar."
+          },
+          "multiRepoGraph.changedRepos.viewMode": {
+            "type": "string",
+            "enum": [
+              "list",
+              "tree"
+            ],
+            "enumDescriptions": [
+              "Show the changed files as a list, with the folder next to each file name.",
+              "Show the changed files in their folders. Folders that contain only one folder show as one row when the setting scm.compactFolders is on."
+            ],
+            "default": "list",
+            "markdownDescription": "How the Changed Repos panel shows changed files. The **View as Tree** / **View as List** button in the panel's title bar changes this setting. When you have not set it, the panel uses `#scm.defaultViewMode#`."
           }
         }
       },

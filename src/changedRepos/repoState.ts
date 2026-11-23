@@ -116,6 +116,26 @@ export interface GroupState {
   kind: GroupKind;
   label: string;
   files: FileState[];
+  /** The files as a folder tree; only in tree view mode. */
+  tree?: FolderNode;
+}
+
+/** How the panel shows the files of a group, like Source Control's "View as List" / "View as Tree". */
+export type ViewMode = 'list' | 'tree';
+
+/**
+ * A folder in the tree view. The root node is the repository itself (empty name).
+ * With compact folders, a chain of folders that only hold one folder shows as one
+ * node ("src/utils"); `path` is then the deepest folder of the chain.
+ */
+export interface FolderNode {
+  /** Shown name, "/"-joined for a compacted chain. */
+  name: string;
+  /** Absolute folder path: the key for collapsing and the target of folder actions. */
+  path: string;
+  folders: FolderNode[];
+  /** Indexes into the group's `files`, in their order. */
+  files: number[];
 }
 export interface RepoState {
   path: string;
@@ -139,25 +159,76 @@ export interface ViewState {
   total: number;
   changed: number;
   showAll: boolean;
+  viewMode: ViewMode;
 }
 
-export function repoState(repo: GitRepository, root: string | undefined): RepoState {
+/**
+ * Builds the folder tree of one group. `dirs[i]` is the folder of file i as path
+ * segments below `rootPath` (empty for a file at the top). Folders come before
+ * files and are sorted by name, like Source Control's tree.
+ */
+export function buildFileTree(rootPath: string, dirs: readonly (readonly string[])[], compact: boolean): FolderNode {
+  const root: FolderNode = { name: '', path: rootPath, folders: [], files: [] };
+  const byPath = new Map<string, FolderNode>();
+  dirs.forEach((parts, index) => {
+    let node = root;
+    let key = '';
+    for (const part of parts) {
+      key += '/' + part;
+      let next = byPath.get(key);
+      if (!next) {
+        next = { name: part, path: path.join(node.path, part), folders: [], files: [] };
+        byPath.set(key, next);
+        node.folders.push(next);
+      }
+      node = next;
+    }
+    node.files.push(index);
+  });
+  const finish = (node: FolderNode): FolderNode => {
+    let n = node;
+    while (compact && n.files.length === 0 && n.folders.length === 1) {
+      const only = n.folders[0];
+      n = { ...only, name: n.name + '/' + only.name };
+    }
+    n.folders = n.folders.map(finish).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    return n;
+  };
+  root.folders = root.folders.map(finish).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  return root;
+}
+
+/** True when `filePath` is inside `folder` (at any depth). The folder itself is not inside itself. */
+export function isInFolder(filePath: string, folder: string): boolean {
+  const rel = path.relative(folder, filePath);
+  return rel !== '' && rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel);
+}
+
+export interface RepoStateOptions {
+  viewMode?: ViewMode;
+  /** Show a chain of single-child folders as one row (Source Control's `scm.compactFolders`). Default true. */
+  compactFolders?: boolean;
+}
+
+export function repoState(repo: GitRepository, root: string | undefined, opts: RepoStateOptions = {}): RepoState {
   const head = repo.state.HEAD;
   const groups: GroupState[] = [];
   for (const kind of GROUP_ORDER) {
     const changes = groupChanges(repo, kind);
     if (changes.length === 0) continue;
-    groups.push({
-      kind,
-      label: GROUP_LABEL[kind],
-      files: [...changes]
-        .sort((a, b) => a.uri.fsPath.localeCompare(b.uri.fsPath))
-        .map((c) => {
-          const rel = path.relative(repo.rootUri.fsPath, c.uri.fsPath);
-          const dir = path.dirname(rel);
-          return { path: c.uri.fsPath, name: path.basename(rel), dir: dir === '.' ? '' : dir, ...statusInfo(c.status, kind) };
-        }),
-    });
+    const files = [...changes]
+      .sort((a, b) => a.uri.fsPath.localeCompare(b.uri.fsPath))
+      .map((c) => {
+        const rel = path.relative(repo.rootUri.fsPath, c.uri.fsPath);
+        const dir = path.dirname(rel);
+        return { path: c.uri.fsPath, name: path.basename(rel), dir: dir === '.' ? '' : dir, ...statusInfo(c.status, kind) };
+      });
+    const group: GroupState = { kind, label: GROUP_LABEL[kind], files };
+    if (opts.viewMode === 'tree') {
+      const dirs = files.map((f) => (f.dir ? f.dir.split(path.sep) : []));
+      group.tree = buildFileTree(repo.rootUri.fsPath, dirs, opts.compactFolders ?? true);
+    }
+    groups.push(group);
   }
   return {
     path: repo.rootUri.fsPath,

@@ -6,7 +6,8 @@
 
   const vscode = acquireVsCodeApi();
   const saved = vscode.getState() || {};
-  const collapsed = new Set(saved.collapsed || []); // keys: repo path, or repo path + '|' + group kind
+  // keys: repo path; repo path + '|' + group kind; repo path + '|' + group kind + '|dir|' + folder path (tree view)
+  const collapsed = new Set(saved.collapsed || []);
   const root = document.getElementById('root');
   // Three parts: the .repos files on top, the repositories, the Frozen group at the bottom.
   root.innerHTML = '<div id="vcs-top"></div><div id="repos"></div><div id="vcs-bottom"></div>';
@@ -190,12 +191,7 @@
     for (const g of repo.groups) {
       const gKey = repo.path + '|' + g.kind;
       const gCollapsed = collapsed.has(gKey);
-      const gActions =
-        g.kind === 'index'
-          ? action('remove', 'Unstage All Changes', 'group:unstage')
-          : g.kind === 'merge'
-            ? action('add', 'Stage All Changes', 'group:stage')
-            : action('discard', 'Discard All Changes', 'group:discard') + action('add', 'Stage All Changes', 'group:stage');
+      const gActions = changeActions(g.kind, 'group', true);
       html += `
         <div class="row group-row" tabindex="0" data-group="${g.kind}"
              data-vscode-context="${ctx({ webviewSection: 'group', repoPath: repo.path, group: g.kind })}">
@@ -206,30 +202,61 @@
           <span class="badge">${g.files.length}</span>
         </div>`;
       if (gCollapsed) continue;
-      for (const f of g.files) {
-        const key = repo.path + '|' + g.kind + '|' + f.path;
-        const fActions =
-          action('go-to-file', 'Open File', 'file:openFile') +
-          (g.kind === 'index'
-            ? action('remove', 'Unstage Changes', 'file:unstage')
-            : g.kind === 'merge'
-              ? action('add', 'Stage Changes', 'file:stage')
-              : action('discard', 'Discard Changes', 'file:discard') + action('add', 'Stage Changes', 'file:stage'));
-        html += `
-          <div class="row file-row${f.deleted ? ' deleted' : ''}${selectedKey === key ? ' selected' : ''}" tabindex="0"
+      if (state.viewMode === 'tree' && g.tree) html += treeRows(repo, g, g.tree, 0);
+      else for (const f of g.files) html += fileRow(repo, g, f, null);
+    }
+    s.groups.innerHTML = html;
+  }
+
+  // Stage / unstage / discard buttons of a group, a folder (prefix 'group' or 'folder') or a file.
+  function changeActions(kind, prefix, all) {
+    const what = all ? 'All Changes' : 'Changes';
+    if (kind === 'index') return action('remove', 'Unstage ' + what, prefix + ':unstage');
+    if (kind === 'merge') return action('add', 'Stage ' + what, prefix + ':stage');
+    return action('discard', 'Discard ' + what, prefix + ':discard') + action('add', 'Stage ' + what, prefix + ':stage');
+  }
+
+  // Tree view rows: an 8px step per level, like VS Code's trees. A file row has no twisty, so
+  // its icon starts where a folder's twisty would; null depth = list view (fixed indent, folder shown).
+  const TREE_BASE = 20;
+  const TREE_STEP = 8;
+
+  function fileRow(repo, g, f, depth) {
+    const key = repo.path + '|' + g.kind + '|' + f.path;
+    const fActions = action('go-to-file', 'Open File', 'file:openFile') + changeActions(g.kind, 'file', false);
+    const indent = depth === null ? '' : ` style="padding-left:${TREE_BASE + 16 + depth * TREE_STEP}px"`;
+    return `
+          <div class="row file-row${f.deleted ? ' deleted' : ''}${selectedKey === key ? ' selected' : ''}" tabindex="0"${indent}
                data-group="${g.kind}" data-file="${esc(f.path)}" data-key="${esc(key)}"
                title="${esc((f.dir ? f.dir + '/' : '') + f.name)}"
                data-vscode-context="${ctx({ webviewSection: 'file-' + g.kind, repoPath: repo.path, group: g.kind, filePath: f.path })}">
             ${icon(fileIcon(f.name), 'icon')}
             <span class="label ${f.cls}">${esc(f.name)}</span>
-            <span class="desc">${esc(f.dir)}</span>
+            ${depth === null ? `<span class="desc">${esc(f.dir)}</span>` : ''}
             <span class="spacer"></span>
             <span class="actions">${fActions}</span>
             <span class="letter ${f.cls}">${esc(f.letter)}</span>
           </div>`;
-      }
+  }
+
+  function treeRows(repo, g, node, depth) {
+    let html = '';
+    for (const folder of node.folders) {
+      const key = repo.path + '|' + g.kind + '|dir|' + folder.path;
+      const isCollapsed = collapsed.has(key);
+      html += `
+          <div class="row folder-row" tabindex="0" style="padding-left:${TREE_BASE + depth * TREE_STEP}px"
+               data-group="${g.kind}" data-folder="${esc(folder.path)}" data-key="${esc(key)}" title="${esc(folder.path)}"
+               data-vscode-context="${ctx({ webviewSection: 'folder-' + g.kind, repoPath: repo.path, group: g.kind, folderPath: folder.path })}">
+            ${icon(isCollapsed ? 'chevron-right' : 'chevron-down', 'twisty')}
+            <span class="label">${esc(folder.name)}</span>
+            <span class="spacer"></span>
+            <span class="actions">${changeActions(g.kind, 'folder', false)}</span>
+          </div>`;
+      if (!isCollapsed) html += treeRows(repo, g, folder, depth + 1);
     }
-    s.groups.innerHTML = html;
+    for (const i of node.files) html += fileRow(repo, g, g.files[i], depth);
+    return html;
   }
 
   // ----- .repos files (vcstool) --------------------------------------------------
@@ -384,11 +411,13 @@
       if (kind === 'repo') return post({ type: 'repoAction', action: name, repo: repoPath });
       if (kind === 'group') return post({ type: 'groupAction', action: name, repo: repoPath, group: row.dataset.group });
       if (kind === 'file') return post({ type: 'fileAction', action: name, repo: repoPath, group: row.dataset.group, file: row.dataset.file });
+      if (kind === 'folder') return post({ type: 'folderAction', action: name, repo: repoPath, group: row.dataset.group, folder: row.dataset.folder });
       return;
     }
     if (!row) return;
     if (row.classList.contains('repo-row')) return toggle(repoPath);
     if (row.classList.contains('group-row')) return toggle(repoPath + '|' + row.dataset.group);
+    if (row.classList.contains('folder-row')) return toggle(row.dataset.key);
     if (row.classList.contains('file-row')) {
       selectedKey = row.dataset.key;
       document.querySelectorAll('.file-row.selected').forEach((r) => r.classList.remove('selected'));

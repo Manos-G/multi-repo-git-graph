@@ -5,7 +5,7 @@ Complete annotated file map of the codebase. **This file is not loaded into agen
 explicitly pointed at it.
 
 > **Accuracy warning.** This map drifts whenever files are added, renamed, or deleted. It was
-> last reconciled against the filesystem on **2026-11-14**. If an entry here disagrees with the
+> last reconciled against the filesystem on **2026-11-23**. If an entry here disagrees with the
 > filesystem, the filesystem wins — verify with `Glob`/`find` before relying on it.
 
 For the architecture that *doesn't* change file-by-file — data flow, RPC conventions, telemetry
@@ -41,6 +41,7 @@ src/
 │   ├── repoState.ts              # PURE: GroupKind/GROUP_ORDER/labels, statusInfo (SCM letter + color class),
 │   │                             #   fileCount (distinct paths), needsAttention (include* options), branchLabel,
 │   │                             #   remoteRepos (repos with an upstream: Fetch All / Pull All), pushRepos (upstream + ahead: Push All),
+│   │                             #   buildFileTree (tree view folders, compact chains), isInFolder (folder actions),
 │   │                             #   repoState → the plain RepoState/ViewState sent to the page
 │   ├── gitApi.ts                 # Types for the used part of the vscode.git API v1; GitStatus as plain constants
 │   └── __tests__/repoState.test.ts # The pure helpers above

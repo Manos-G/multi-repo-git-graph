@@ -6,12 +6,14 @@ import {
   GROUP_ORDER,
   branchLabel,
   groupChanges,
+  isInFolder,
   needsAttention,
   pushRepos,
   remoteRepos,
   repoName,
   repoState,
   type GroupKind,
+  type ViewMode,
   type ViewState,
 } from './repoState.js';
 import { GitExecutor } from '../services/GitExecutor.js';
@@ -36,6 +38,7 @@ import type { GitDiffService } from '../services/GitDiffService.js';
 const VIEW_ID = 'multiRepoGraph.changedRepos';
 const CFG = 'multiRepoGraph.changedRepos';
 const CTX_SHOWING_ALL = 'multiRepoGraph.changedRepos.showingAll';
+const CTX_VIEW_MODE = 'multiRepoGraph.changedRepos.viewMode';
 
 function cfg() {
   const c = vscode.workspace.getConfiguration(CFG);
@@ -47,6 +50,30 @@ function cfg() {
     confirmDiscard: c.get<boolean>('confirmDiscard', true),
     showStatusBar: c.get<boolean>('showStatusBar', true),
   };
+}
+
+/**
+ * List or tree. `multiRepoGraph.changedRepos.viewMode` when the user has set it (the title bar
+ * buttons set it); otherwise Source Control's own `scm.defaultViewMode`.
+ */
+function viewMode(): ViewMode {
+  const i = vscode.workspace.getConfiguration(CFG).inspect<string>('viewMode');
+  const own = i?.workspaceFolderValue ?? i?.workspaceValue ?? i?.globalValue;
+  const mode = own ?? vscode.workspace.getConfiguration('scm').get<string>('defaultViewMode', 'list');
+  return mode === 'tree' ? 'tree' : 'list';
+}
+
+/** Writes the view mode where the current value comes from, so a workspace value does not hide the change. */
+async function setViewMode(mode: ViewMode): Promise<void> {
+  const c = vscode.workspace.getConfiguration(CFG);
+  const i = c.inspect<string>('viewMode');
+  const target =
+    i?.workspaceFolderValue !== undefined
+      ? vscode.ConfigurationTarget.WorkspaceFolder
+      : i?.workspaceValue !== undefined
+        ? vscode.ConfigurationTarget.Workspace
+        : vscode.ConfigurationTarget.Global;
+  await c.update('viewMode', mode, target);
 }
 
 // ---------------------------------------------------------------------------
@@ -77,6 +104,7 @@ interface MenuContext {
   repoPath?: string;
   group?: GroupKind;
   filePath?: string;
+  folderPath?: string;
 }
 
 class ChangedReposPanel implements vscode.WebviewViewProvider {
@@ -128,12 +156,15 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
     const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     const changed = this.changedRepos();
     const list = this.showAll ? this.sortedRepos() : changed;
+    const mode = viewMode();
+    const compactFolders = vscode.workspace.getConfiguration('scm').get<boolean>('compactFolders', true);
     const state: ViewState = {
-      repos: list.map((r) => ({ ...repoState(r, root), drift: this.vcs.driftNotes(r.rootUri.fsPath) })),
+      repos: list.map((r) => ({ ...repoState(r, root, { viewMode: mode, compactFolders }), drift: this.vcs.driftNotes(r.rootUri.fsPath) })),
       vcs: this.vcs.viewState(),
       total: this.git.repositories.length,
       changed: changed.length,
       showAll: this.showAll,
+      viewMode: mode,
     };
     void this.view.webview.postMessage({ type: 'state', state });
     this.view.badge = changed.length > 0 ? { value: changed.length, tooltip: `${changed.length} repositories need attention` } : undefined;
@@ -177,6 +208,7 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
     repo?: string;
     group?: GroupKind;
     file?: string;
+    folder?: string;
     value?: string;
     message?: string;
     name?: string;
@@ -210,6 +242,8 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
         return this.groupAction(repo, m.group, m.action ?? '');
       case 'fileAction':
         return this.fileAction(repo, m.group, m.file, m.action ?? '');
+      case 'folderAction':
+        return this.folderAction(repo, m.group, m.folder, m.action ?? '');
     }
   }
 
@@ -390,15 +424,25 @@ class ChangedReposPanel implements vscode.WebviewViewProvider {
 
   async groupAction(repo: GitRepository, group: GroupKind | undefined, action: string): Promise<void> {
     if (!group) return;
-    const name = repoName(repo);
-    const changes = groupChanges(repo, group);
+    await this.changesAction(repo, groupChanges(repo, group), action, repoName(repo));
+  }
+
+  /** Stage, unstage or discard every change of one group inside a folder (tree view folder rows). */
+  async folderAction(repo: GitRepository, group: GroupKind | undefined, folder: string | undefined, action: string): Promise<void> {
+    if (!group || !folder) return;
+    const changes = groupChanges(repo, group).filter((c) => isInFolder(c.uri.fsPath, folder));
+    await this.changesAction(repo, changes, action, `"${path.basename(folder)}" in ${repoName(repo)}`);
+  }
+
+  private async changesAction(repo: GitRepository, changes: readonly GitChange[], action: string, where: string): Promise<void> {
     const paths = changes.map((c) => c.uri.fsPath);
-    if (action === 'stage') await this.run(`Staging in ${name}`, () => repo.add(paths));
-    if (action === 'unstage') await this.run(`Unstaging in ${name}`, () => repo.revert(paths));
+    if (paths.length === 0) return;
+    if (action === 'stage') await this.run(`Staging in ${where}`, () => repo.add(paths));
+    if (action === 'unstage') await this.run(`Unstaging in ${where}`, () => repo.revert(paths));
     if (action === 'discard') {
       const untracked = changes.filter((c) => c.status === GitStatus.UNTRACKED).length;
-      if (await this.confirmDiscard(`${paths.length} changes in ${name}`, untracked)) {
-        await this.run(`Discarding in ${name}`, () => repo.clean(paths));
+      if (await this.confirmDiscard(`${paths.length} changes in ${where}`, untracked)) {
+        await this.run(`Discarding in ${where}`, () => repo.clean(paths));
       }
     }
   }
@@ -535,9 +579,15 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
       schedule();
     }),
     { dispose: () => watched.forEach((d) => d.dispose()) },
-    vscode.workspace.onDidChangeConfiguration((e) => e.affectsConfiguration(CFG) && schedule()),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration(`${CFG}.viewMode`) || e.affectsConfiguration('scm.defaultViewMode')) {
+        void vscode.commands.executeCommand('setContext', CTX_VIEW_MODE, viewMode());
+      }
+      if (e.affectsConfiguration(CFG) || e.affectsConfiguration('scm.defaultViewMode') || e.affectsConfiguration('scm.compactFolders')) schedule();
+    }),
   );
   void vscode.commands.executeCommand('setContext', CTX_SHOWING_ALL, false);
+  void vscode.commands.executeCommand('setContext', CTX_VIEW_MODE, viewMode());
   context.subscriptions.push(vcs.onDidChange(schedule));
   registerVcstoolCommands(context, {
     workspace: vcs,
@@ -581,6 +631,8 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
   // View title buttons.
   reg('showAll', () => panel.setShowAll(true));
   reg('showChangedOnly', () => panel.setShowAll(false));
+  reg('viewAsTree', () => setViewMode('tree'));
+  reg('viewAsList', () => setViewMode('list'));
   reg('refresh', () => panel.run('Refreshing repositories', () => Promise.all(git.repositories.map((r) => r.status()))));
   // Runs one remote operation on the selected repositories, 4 at a time.
   // A failure in one repository does not stop the others; all failures are reported together.
@@ -653,4 +705,12 @@ export async function registerChangedReposView(context: vscode.ExtensionContext,
   fileCmd('stageFile', 'stage');
   fileCmd('unstageFile', 'unstage');
   fileCmd('discardFile', 'discard');
+  const folderCmd = (id: string, action: string) =>
+    reg(id, (ctx) => {
+      const repo = panel.menuRepo(ctx);
+      return repo ? panel.folderAction(repo, ctx?.group, ctx?.folderPath, action) : undefined;
+    });
+  folderCmd('stageFolder', 'stage');
+  folderCmd('unstageFolder', 'unstage');
+  folderCmd('discardFolder', 'discard');
 }

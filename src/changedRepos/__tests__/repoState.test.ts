@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { GitStatus, type GitBranch, type GitChange, type GitRepository } from '../gitApi.js';
 import {
   branchLabel,
+  buildFileTree,
   fileCount,
+  isInFolder,
   needsAttention,
   pushRepos,
   remoteRepos,
@@ -228,5 +230,68 @@ describe('repoState', () => {
     expect(s.groups).toHaveLength(1);
     expect(s.groups[0]).toMatchObject({ kind: 'untracked', label: 'Untracked Changes' });
     expect(s.groups[0].files[0]).toMatchObject({ name: 'new.txt', letter: 'U', cls: 'st-untracked' });
+  });
+});
+
+describe('buildFileTree', () => {
+  // A readable picture of a tree: "name/" for a folder, file indexes as numbers.
+  type Shape = (string | number | Shape)[];
+  const shape = (n: ReturnType<typeof buildFileTree>): Shape => [
+    ...n.folders.flatMap((f) => [f.name + '/', shape(f)]),
+    ...n.files,
+  ];
+
+  it('puts files in their folders, folders first and sorted by name', () => {
+    const tree = buildFileTree('/r', [['src'], [], ['docs'], ['src', 'b'], ['src']], true);
+    expect(shape(tree)).toEqual(['docs/', [2], 'src/', ['b/', [3], 0, 4], 1]);
+    expect(tree.path).toBe('/r');
+    expect(tree.folders[1].folders[0].path).toBe('/r/src/b');
+  });
+
+  it('shows a chain of folders that only hold one folder as one row, keyed by the deepest folder', () => {
+    const dirs = [
+      ['Digital_image_processing', 'Lab 2026', 'Lab_1'],
+      ['Digital_image_processing', 'Lab 2026', 'Lab_2'],
+      ['Digital_image_processing', 'Lab 2026', 'Lab_2'],
+    ];
+    const tree = buildFileTree('/r', dirs, true);
+    expect(shape(tree)).toEqual(['Digital_image_processing/Lab 2026/', ['Lab_1/', [0], 'Lab_2/', [1, 2]]]);
+    expect(tree.folders[0].path).toBe('/r/Digital_image_processing/Lab 2026');
+  });
+
+  it('keeps every folder level when compact folders are off', () => {
+    const tree = buildFileTree('/r', [['a', 'b', 'c']], false);
+    expect(shape(tree)).toEqual(['a/', ['b/', ['c/', [0]]]]);
+    expect(tree.folders[0].folders[0].folders[0].path).toBe('/r/a/b/c');
+  });
+
+  it('does not compact a folder that also holds files', () => {
+    const tree = buildFileTree('/r', [['a'], ['a', 'b']], true);
+    expect(shape(tree)).toEqual(['a/', ['b/', [1], 0]]);
+  });
+});
+
+describe('isInFolder', () => {
+  it.each([
+    ['/r/src/a.ts', '/r/src', true],
+    ['/r/src/deep/a.ts', '/r/src', true],
+    ['/r/src', '/r/src', false],
+    ['/r/srcx/a.ts', '/r/src', false],
+    ['/r/other/a.ts', '/r/src', false],
+    ['/r/..x/a.ts', '/r/..x', true],
+  ])('%s in %s → %s', (file, folder, expected) => {
+    expect(isInFolder(file, folder)).toBe(expected);
+  });
+});
+
+describe('repoState tree view', () => {
+  it('adds a tree to each group only in tree view mode', () => {
+    const repo = fakeRepo({
+      workingTree: [change('/ws/repo-a/src/util/a.ts', GitStatus.MODIFIED), change('/ws/repo-a/z.txt', GitStatus.MODIFIED)],
+    });
+    expect(repoState(repo, undefined).groups[0].tree).toBeUndefined();
+    const tree = repoState(repo, undefined, { viewMode: 'tree' }).groups[0].tree!;
+    expect(tree.folders.map((f) => [f.name, f.path, f.files])).toEqual([['src/util', '/ws/repo-a/src/util', [0]]]);
+    expect(tree.files).toEqual([1]);
   });
 });

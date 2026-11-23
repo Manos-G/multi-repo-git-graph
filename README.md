@@ -19,6 +19,7 @@ The panel looks and works like the Source Control view. For each repository it s
 - A message box. Press **Ctrl+Enter** to commit. The message is shared with the draft in Source Control.
 - The **Commit** button. Its arrow has Commit & Push and Commit & Sync. When there is nothing to commit, the button changes to **Sync Changes** or **Publish Branch**.
 - The **Merge Changes**, **Staged Changes** and **Changes** groups with the number of files.
+- **View as List** or **View as Tree**, the same as in Source Control. Use the button in the panel's title bar. In the tree, folders have stage, unstage and discard buttons that work on all the changes in the folder.
 - Buttons that show when you move the pointer over a row: stage, unstage, discard and open the file.
 - Click a file to see the diff, the same as in Source Control.
 - Right-click a repository, a group or a file for more actions (Pull, Push, Fetch, Open in Terminal and more).
@@ -46,6 +47,7 @@ The panel uses the repository list of the built-in Git extension. If your reposi
 | `multiRepoGraph.changedRepos.smartCommit` | `ask` | What Commit does when nothing is staged: `ask`, `always` (stage all and commit) or `never`. |
 | `multiRepoGraph.changedRepos.confirmDiscard` | `true` | Ask before discarding changes. |
 | `multiRepoGraph.changedRepos.showStatusBar` | `true` | Show the number of changed repositories in the status bar. |
+| `multiRepoGraph.changedRepos.viewMode` | `list` | Show changed files as a `list` or a `tree`. The title bar button changes it. When you do not set it, the panel uses `scm.defaultViewMode`. |
 
 ## vcstool (.repos) workspaces
 

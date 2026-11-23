@@ -379,8 +379,10 @@ The fork's main feature: a view in its own Activity Bar container (`multiRepoGra
 
 **Message protocol** (`postMessage` both ways, no shared types, so keep both sides in step by hand):
 
-- page → extension: `ready` (sent once on load; answered with the state), `showAll`, `fetchAll`, `setMessage {repo, value}` (debounced 250 ms; writes `repo.inputBox.value`, so the draft is shared with Source Control), `commit {repo, message}` (button or Ctrl+Enter), `commitMenu {repo, message}`, `repoAction {repo, action}`, `groupAction {repo, group, action}`, `fileAction {repo, group, file, action}` (a click on a file row is `action: 'open'`).
+- page → extension: `ready` (sent once on load; answered with the state), `showAll`, `fetchAll`, `setMessage {repo, value}` (debounced 250 ms; writes `repo.inputBox.value`, so the draft is shared with Source Control), `commit {repo, message}` (button or Ctrl+Enter), `commitMenu {repo, message}`, `repoAction {repo, action}`, `groupAction {repo, group, action}`, `folderAction {repo, group, folder, action}` (tree view folder row: stage/unstage/discard every change of that group inside the folder), `fileAction {repo, group, file, action}` (a click on a file row is `action: 'open'`).
 - extension → page: `state {state: ViewState}` (the whole list, after every debounced change, on `ready` and when the view becomes visible), `committed {repo}` (clear that message box).
+
+**List or tree.** `ViewState.viewMode` comes from `multiRepoGraph.changedRepos.viewMode`, or from `scm.defaultViewMode` while the user has not set it; the title bar's View as Tree / View as List buttons write the setting. In tree mode each group also carries `tree`, built by the pure `buildFileTree` in `repoState.ts` (folders first, `scm.compactFolders` chains joined as `a/b`, file entries are indexes into `files`). The page only draws it, so the folder logic stays testable.
 
 Repositories, groups and files are always identified by **absolute paths**, never by index, because the list changes between a click and its handling.
 
@@ -392,7 +394,7 @@ Repositories, groups and files are always identified by **absolute paths**, neve
 
 Do not swap in `GitExecutor` or `git-show:` URIs here. The panel's promise is that it is Source Control.
 
-**Colors and menus.** Every color in `view.css` comes from a `var(--vscode-*)` token, the same rule as the graph webview (a fallback inside `var(…, fallback)` is allowed). Icons are codicons, never images. Right-click menus are native VS Code menus: each row carries a `data-vscode-context` JSON (`webviewSection`: `repo` / `group` / `file-<group>`, plus `repoPath`, `group`, `filePath`, and `preventDefaultContextMenuItems`), and the items are declared under `contributes.menus["webview/context"]` in `package.json` with `when: webviewId == 'multiRepoGraph.changedRepos' && webviewSection == '…'`. A new menu item = a command in `registerChangedReposView` + a `commands` entry + a `webview/context` entry (hide it from the Command Palette with `commandPalette` `when: false`).
+**Colors and menus.** Every color in `view.css` comes from a `var(--vscode-*)` token, the same rule as the graph webview (a fallback inside `var(…, fallback)` is allowed). Icons are codicons, never images. Right-click menus are native VS Code menus: each row carries a `data-vscode-context` JSON (`webviewSection`: `repo` / `group` / `folder-<group>` / `file-<group>`, plus `repoPath`, `group`, `folderPath`, `filePath`, and `preventDefaultContextMenuItems`), and the items are declared under `contributes.menus["webview/context"]` in `package.json` with `when: webviewId == 'multiRepoGraph.changedRepos' && webviewSection == '…'`. A new menu item = a command in `registerChangedReposView` + a `commands` entry + a `webview/context` entry (hide it from the Command Palette with `commandPalette` `when: false`).
 
 **Third-party: `resources/codicons/`** is Microsoft's Codicons (font under CC BY 4.0, code under MIT). Its `LICENSE-CC-BY-4.0`, `LICENSE-CODE-MIT` and `README.txt` must stay next to the font and ship in the `.vsix`. When updating the font, replace the files together and keep the attribution.
 
