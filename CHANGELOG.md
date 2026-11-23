@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Multi-Repo Git Graph is a fork of [Speedy Git](https://github.com/onlineeric/speedy-git-ext). 0.3.0 is the first version published to the stores; 0.1.0 and 0.2.0 were local builds. The fork's own versions come first. Below them is the Speedy Git history the fork is based on (up to 5.24.2).
 
-## [Unreleased]
+## [0.4.0] - 2026-11-24
 
 ### Added
 - **View as Tree** in the Changed Repos panel, the same as in Source Control. A button in the panel's title bar changes between **View as Tree** and **View as List**. In the tree, the files of each group are in their folders. Click a folder to open or close it. Folders have stage, unstage and discard buttons and a right-click menu, which work on all the changes of that group in the folder. A folder that contains only one folder shows as one row (`a/b`), like `scm.compactFolders`. Setting: `multiRepoGraph.changedRepos.viewMode`. When you do not set it, the panel uses `scm.defaultViewMode`.
